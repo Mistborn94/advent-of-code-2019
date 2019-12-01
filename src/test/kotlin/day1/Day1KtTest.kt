@@ -9,12 +9,15 @@ internal class Day1KtTest {
     @Test
     fun solve() {
         val lines = readInput(1).readLines()
-        val partA = day1.solvePartA(lines)
+        val partA = solvePartA(lines)
 
         println("Day 1A: $partA")
+        assertEquals(3219099, partA)
 
         val partB = solvePartB(lines)
         println("Day 1B: $partB")
+
+        assertEquals(4825810, partB)
 
     }
 
@@ -28,9 +31,8 @@ internal class Day1KtTest {
 
     @Test
     fun testTotalFuel() {
-        assertEquals(2, calculateExtraFuel(14))
-        assertEquals(966, calculateExtraFuel(1969))
-        assertEquals(50346, calculateExtraFuel(100756))
-
+        assertEquals(2, calculateTotalFuel(14))
+        assertEquals(966, calculateTotalFuel(1969))
+        assertEquals(50346, calculateTotalFuel(100756))
     }
 }

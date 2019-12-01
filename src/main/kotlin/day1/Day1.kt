@@ -12,19 +12,18 @@ fun solvePartA(lines: List<String>): Int {
 fun solvePartB(lines: List<String>): Int {
     return lines.asSequence()
         .map(String::toInt)
-        .map(::calculateFuel)
-        .map { it + calculateExtraFuel(it) }
+        .map(::calculateTotalFuel)
         .sum()
 }
 
 fun calculateFuel(mass: Int) = max(0, mass / 3 - 2)
 
-fun calculateExtraFuel(fuelMass: Int): Int {
-    if (fuelMass <= 0) {
+fun calculateTotalFuel(mass: Int): Int {
+    if (mass <= 0) {
         return 0
     }
 
-    val extraFuel = calculateFuel(fuelMass)
+    val fuel = calculateFuel(mass)
 
-    return extraFuel + calculateExtraFuel(extraFuel)
+    return fuel + calculateTotalFuel(fuel)
 }
