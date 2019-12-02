@@ -1,8 +1,12 @@
 package day2
 
-fun runProgram(program: Array<Int>) {
+fun runProgram(originalProgram: Array<Int>, noun: Int? = null, verb: Int? = null): Array<Int> {
+    val program = originalProgram.copyOf()
 
-    var index = 0;
+    program[1] = noun ?: program[1]
+    program[2] = verb ?: program[2]
+
+    var index = 0
 
     var operation = program[index]
 
@@ -23,4 +27,20 @@ fun runProgram(program: Array<Int>) {
         index += 4
         operation = program[index]
     }
+
+    return program
+}
+
+fun solveB(initialProgram: Array<Int>, expectedResult: Int): Int {
+
+    for (noun in 0..99) {
+        for (verb in 0..99) {
+            val result = runProgram(initialProgram, noun, verb)
+            if (result[0] == expectedResult) {
+                return 100 * noun + verb
+            }
+        }
+    }
+
+    throw IllegalStateException("No results found")
 }
