@@ -12,10 +12,8 @@ fun runProgram(originalProgram: Array<Int>, noun: Int? = null, verb: Int? = null
 
     while (operation != 99) {
 
-        val arg1Index = program[index + 1]
-        val arg1 = program[arg1Index]
-        val arg2Index = program[index + 2]
-        val arg2 = program[arg2Index]
+        val arg1 = getArgument(program, index + 1)
+        val arg2 = getArgument(program, index + 2)
         val solutionIndex = program[index + 3]
 
         when (operation) {
@@ -30,6 +28,8 @@ fun runProgram(originalProgram: Array<Int>, noun: Int? = null, verb: Int? = null
 
     return program
 }
+
+private fun getArgument(program: Array<Int>, index: Int): Int = program[program[index]]
 
 fun solveB(initialProgram: Array<Int>, expectedResult: Int): Int {
 
