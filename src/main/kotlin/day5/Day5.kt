@@ -1,5 +1,13 @@
 package day5
 
+private fun binaryOperation(intCode: IntCode, params: List<Param>, operation: (Int, Int) -> Int) {
+    val arg1 = params[0].resolveValue(intCode.program)
+    val arg2 = params[1].resolveValue(intCode.program)
+    val solutionIndex = params[2].value
+
+    intCode.program[solutionIndex] = operation(arg1, arg2)
+}
+
 data class Param(val mode: ArgMode, val value: Int) {
     fun resolveValue(program: List<Int>): Int = mode.resolve(value, program)
 }
@@ -10,64 +18,49 @@ enum class ArgMode(val resolve: (Int, List<Int>) -> Int) {
 }
 
 enum class OperationType(val code: String, val argCount: Int, val run: (IntCode, List<Param>) -> Unit) {
-    ADD("01", 3, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
-        val solutionIndex = params[2].value
-
-        elfCode.program[solutionIndex] = arg1 + arg2
+    ADD("01", 3, { intCode, params ->
+        binaryOperation(intCode, params) { arg1, arg2 -> arg1 + arg2 }
     }),
-    MULTIPLY("02", 3, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
-        val solutionIndex = params[2].value
-
-        elfCode.program[solutionIndex] = arg1 * arg2
+    MULTIPLY("02", 3, { intCode, params ->
+        binaryOperation(intCode, params) { arg1, arg2 -> arg1 * arg2 }
     }),
-    INPUT("03", 1, { elfCode, params ->
+    INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].value
 
-        elfCode.program[solutionIndex] = elfCode.inputSupplier()
+        intCode.program[solutionIndex] = intCode.inputSupplier()
     }),
-    OUTPUT("04", 1, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        elfCode.output(arg1)
+    OUTPUT("04", 1, { intCode, params ->
+        val arg1 = params[0].resolveValue(intCode.program)
+        intCode.output(arg1)
     }),
-    JUMP_TRUE("05", 2, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
+    JUMP_TRUE("05", 2, { intCode, params ->
+        val arg1 = params[0].resolveValue(intCode.program)
+        val arg2 = params[1].resolveValue(intCode.program)
 
         if (arg1 != 0) {
-            elfCode.index = arg2
+            intCode.index = arg2
         }
     }),
-    JUMP_FALSE("06", 2, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
+    JUMP_FALSE("06", 2, { intCode, params ->
+        val arg1 = params[0].resolveValue(intCode.program)
+        val arg2 = params[1].resolveValue(intCode.program)
 
         if (arg1 == 0) {
-            elfCode.index = arg2
+            intCode.index = arg2
         }
     }),
-    LESS_THAN("07", 3, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
-        val solutionIndex = params[2].value
-
-        elfCode.program[solutionIndex] = if (arg1 < arg2) 1 else 0
+    LESS_THAN("07", 3, { intCode, params ->
+        binaryOperation(intCode, params) { arg1, arg2 -> if (arg1 < arg2) 1 else 0 }
     }),
-    EQUALS("08", 3, { elfCode, params ->
-        val arg1 = params[0].resolveValue(elfCode.program)
-        val arg2 = params[1].resolveValue(elfCode.program)
-        val solutionIndex = params[2].value
-
-        elfCode.program[solutionIndex] = if (arg1 == arg2) 1 else 0
+    EQUALS("08", 3, { intCode, params ->
+        binaryOperation(intCode, params) { arg1, arg2 -> if (arg1 == arg2) 1 else 0 }
     });
 
     val size = argCount + 1
 
     companion object {
         fun fromCode(code: String): OperationType = values().first { it.code == code }
+
     }
 
 }
