@@ -60,7 +60,6 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 
     companion object {
         fun fromCode(code: String): OperationType = values().first { it.code == code }
-
     }
 
 }
@@ -90,6 +89,7 @@ class IntCode(originalProgram: List<Int>, val inputSupplier: () -> Int) {
             }
 
             operation.run(this, params)
+
             if (index == startIndex) {
                 index += operation.size
             }
