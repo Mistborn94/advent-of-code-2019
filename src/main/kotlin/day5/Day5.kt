@@ -67,7 +67,12 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 
 }
 
-class IntCode(originalProgram: List<Int>, val inputs: BlockingQueue<Int>, val outputListener: (Int) -> Unit = {}) {
+class IntCode(
+    originalProgram: List<Int>,
+    val inputs: BlockingQueue<Int>,
+    val outputListener: (Int) -> Unit = {},
+    val finishListener: () -> Unit = {}
+) {
 
     constructor(originalProgram: List<Int>, inputs: List<Int>) : this(originalProgram, LinkedBlockingQueue(inputs))
 
@@ -100,6 +105,8 @@ class IntCode(originalProgram: List<Int>, val inputs: BlockingQueue<Int>, val ou
             }
             instruction = program[index]
         }
+
+        finishListener()
     }
 
     fun output(value: Int) {
