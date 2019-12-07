@@ -55,7 +55,7 @@ class IntCodeTest {
     }
 
     private fun testOutput(program: List<Int>, input: Int, output: Int) {
-        val intCode = IntCode(program) { input }
+        val intCode = IntCode(program, listOf(input))
         intCode.runProgram()
         assertEquals(output, intCode.outputs.last())
     }
@@ -64,19 +64,19 @@ class IntCodeTest {
     fun solve() {
         val originalProgram = readInput(5).readText().split(",").map(String::trim).map(String::toInt);
 
-        val intCodeA = IntCode(originalProgram) { 1 }
+        val intCodeA = IntCode(originalProgram, listOf(1))
         intCodeA.runProgram()
 
         println("Day 5A: ${intCodeA.outputs}")
 
-        val intCodeB = IntCode(originalProgram) { 5 }
+        val intCodeB = IntCode(originalProgram, listOf(5))
         intCodeB.runProgram()
 
         println("Day 5B: ${intCodeB.outputs}")
     }
 
     private fun testProgram(program: List<Int>, expected: List<Int>) {
-        val intCode = IntCode(program) { 1 }
+        val intCode = IntCode(program, listOf(1))
         intCode.runProgram()
         assertEquals(expected.joinToString(), intCode.program.joinToString())
     }

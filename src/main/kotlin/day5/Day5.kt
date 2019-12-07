@@ -1,5 +1,8 @@
 package day5
 
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+
 private fun binaryOperation(intCode: IntCode, params: List<Param>, operation: (Int, Int) -> Int) {
     val arg1 = params[0].resolveValue(intCode.program)
     val arg2 = params[1].resolveValue(intCode.program)
@@ -27,7 +30,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
     INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].value
 
-        intCode.program[solutionIndex] = intCode.inputSupplier()
+        intCode.program[solutionIndex] = intCode.nextInput()
     }),
     OUTPUT("04", 1, { intCode, params ->
         val arg1 = params[0].resolveValue(intCode.program)
@@ -64,7 +67,9 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 
 }
 
-class IntCode(originalProgram: List<Int>, val inputSupplier: () -> Int) {
+class IntCode(originalProgram: List<Int>, val inputs: BlockingQueue<Int>, val outputListener: (Int) -> Unit = {}) {
+
+    constructor(originalProgram: List<Int>, inputs: List<Int>) : this(originalProgram, LinkedBlockingQueue(inputs))
 
     val program = originalProgram.toMutableList()
     val outputs = mutableListOf<Int>()
@@ -99,5 +104,10 @@ class IntCode(originalProgram: List<Int>, val inputSupplier: () -> Int) {
 
     fun output(value: Int) {
         outputs += value
+        outputListener(value)
+    }
+
+    fun nextInput(): Int {
+        return inputs.take()
     }
 }
