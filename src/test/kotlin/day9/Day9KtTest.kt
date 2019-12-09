@@ -37,13 +37,23 @@ class Day9KtTest {
     }
 
     @Test
-    fun solve() {
+    fun solveA() {
         val program = readInput(9).readText().trim().split(",").map { it.toLong() }
         val output = IntCode(program, LinkedBlockingQueue(listOf(1L))).let {
             it.runProgram()
             it.outputs
         }
         println("Day 9A ${output.last()}: $output")
+    }
+
+    @Test
+    fun solveB() {
+        val program = readInput(9).readText().trim().split(",").map { it.toLong() }
+        val output = IntCode(program, LinkedBlockingQueue(listOf(2L))).let {
+            it.runProgram()
+            it.outputs
+        }
+        println("Day 9B ${output.last()}: $output")
     }
 
 }

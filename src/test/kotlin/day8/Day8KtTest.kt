@@ -12,6 +12,8 @@ class Day8KtTest {
         println("Day 8A: $solveA")
         val solveB = solveB(25, 6, input)
 
-        println("Day 8B:\n$solveB")
+
+
+        println("Day 8B:\n${solveB.replace('0', ' ')}")
     }
 }

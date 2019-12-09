@@ -63,11 +63,11 @@ class Day7KtTest {
 
     }
 
-    private fun testPartB(program: List<Long>, expectedResult: Int) {
+    private fun testPartB(program: List<Long>, expectedResult: Long) {
         assertEquals(expectedResult, solveB(program))
     }
 
-    private fun testPartA(program: List<Int>, expectedResult: Int) {
+    private fun testPartA(program: List<Int>, expectedResult: Long) {
         assertEquals(expectedResult, solveA(program))
     }
 
