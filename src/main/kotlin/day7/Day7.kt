@@ -30,27 +30,27 @@ fun findPermutations(list: MutableList<Int>, k: Int = list.size): List<List<Int>
     return outputs
 }
 
-fun solveA(program: List<Int>): Int {
+fun solveA(program: List<Int>): Long {
     return permutationsA.map { permutation ->
-        (0 until 5).fold(0) { prev, i -> runAmplifier(program, permutation[i], prev) }
+        (0 until 5).fold(0L) { prev, i -> runAmplifier(program, permutation[i], prev) }
     }.max()!!
 }
 
-fun solveB(program: List<Int>): Int {
+fun solveB(program: List<Long>): Long {
     return permutationsB.map { permutation ->
         runUntilStopping(program, permutation)
     }.max()!!
 }
 
-fun runUntilStopping(program: List<Int>, phases: List<Int>): Int {
+fun runUntilStopping(program: List<Long>, phases: List<Int>): Long {
 
     val latch = CountDownLatch(5)
 
-    val queueA = LinkedBlockingQueue(listOf(phases[0], 0))
-    val queueB = LinkedBlockingQueue(listOf(phases[1]))
-    val queueC = LinkedBlockingQueue(listOf(phases[2]))
-    val queueD = LinkedBlockingQueue(listOf(phases[3]))
-    val queueE = LinkedBlockingQueue(listOf(phases[4]))
+    val queueA = LinkedBlockingQueue(listOf(phases[0].toLong(), 0))
+    val queueB = LinkedBlockingQueue(listOf(phases[1].toLong()))
+    val queueC = LinkedBlockingQueue(listOf(phases[2].toLong()))
+    val queueD = LinkedBlockingQueue(listOf(phases[3].toLong()))
+    val queueE = LinkedBlockingQueue(listOf(phases[4].toLong()))
 
     val intcodeA = IntCode(program, queueA, { queueB.put(it) }, { latch.countDown() })
     val intcodeB = IntCode(program, queueB, { queueC.put(it) }, { latch.countDown() })
@@ -71,9 +71,9 @@ fun runUntilStopping(program: List<Int>, phases: List<Int>): Int {
 private fun runAmplifier(
     program: List<Int>,
     phase: Int,
-    previousOutput: Int
-): Int {
-    return IntCode(program, listOf(phase, previousOutput)).let {
+    previousOutput: Long
+): Long {
+    return IntCode(program, listOf(phase, previousOutput.toInt())).let {
         it.runProgram()
         it.outputs.first()
     }

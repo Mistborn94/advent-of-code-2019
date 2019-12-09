@@ -63,7 +63,7 @@ class Day7KtTest {
 
     }
 
-    private fun testPartB(program: List<Int>, expectedResult: Int) {
+    private fun testPartB(program: List<Long>, expectedResult: Int) {
         assertEquals(expectedResult, solveB(program))
     }
 
@@ -73,8 +73,8 @@ class Day7KtTest {
 
     @Test
     fun solve() {
-        val program = readInput(7).readText().split(",").map { it.trim() }.map { it.toInt() }
+        val program = readInput(7).readText().trim().split(",").map(String::toInt)
         println("Day 7A ${solveA(program)}")
-        println("Day 7B ${solveB(program)}")
+        println("Day 7B ${solveB(program.map(Int::toLong))}")
     }
 }
