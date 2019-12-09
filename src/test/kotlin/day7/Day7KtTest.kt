@@ -74,7 +74,11 @@ class Day7KtTest {
     @Test
     fun solve() {
         val program = readInput(7).readText().trim().split(",").map(String::toInt)
-        println("Day 7A ${solveA(program)}")
-        println("Day 7B ${solveB(program.map(Int::toLong))}")
+        val solveA = solveA(program)
+        assertEquals(18812, solveA)
+        println("Day 7A $solveA")
+        val solveB = solveB(program.map(Int::toLong))
+        assertEquals(25534964, solveB)
+        println("Day 7B $solveB")
     }
 }

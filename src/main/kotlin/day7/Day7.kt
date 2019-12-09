@@ -3,7 +3,6 @@ package day7
 import day5.IntCode
 import java.util.Collections.swap
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 
 val permutationsA: List<List<Int>> = findPermutations(mutableListOf(0, 1, 2, 3, 4))
@@ -44,27 +43,24 @@ fun solveB(program: List<Long>): Long {
 
 fun runUntilStopping(program: List<Long>, phases: List<Int>): Long {
 
-    val latch = CountDownLatch(5)
-
     val queueA = LinkedBlockingQueue(listOf(phases[0].toLong(), 0))
     val queueB = LinkedBlockingQueue(listOf(phases[1].toLong()))
     val queueC = LinkedBlockingQueue(listOf(phases[2].toLong()))
     val queueD = LinkedBlockingQueue(listOf(phases[3].toLong()))
     val queueE = LinkedBlockingQueue(listOf(phases[4].toLong()))
 
-    val intcodeA = IntCode(program, queueA, { queueB.put(it) }, { latch.countDown() })
-    val intcodeB = IntCode(program, queueB, { queueC.put(it) }, { latch.countDown() })
-    val intcodeC = IntCode(program, queueC, { queueD.put(it) }, { latch.countDown() })
-    val intcodeD = IntCode(program, queueD, { queueE.put(it) }, { latch.countDown() })
-    val intcodeE = IntCode(program, queueE, { queueA.put(it) }, { latch.countDown() })
+    val intcodeA = IntCode(program, queueA) { queueB.put(it) }
+    val intcodeB = IntCode(program, queueB) { queueC.put(it) }
+    val intcodeC = IntCode(program, queueC) { queueD.put(it) }
+    val intcodeD = IntCode(program, queueD) { queueE.put(it) }
+    val intcodeE = IntCode(program, queueE) { queueA.put(it) }
 
     CompletableFuture.runAsync { intcodeA.runProgram() }
     CompletableFuture.runAsync { intcodeB.runProgram() }
     CompletableFuture.runAsync { intcodeC.runProgram() }
     CompletableFuture.runAsync { intcodeD.runProgram() }
-    CompletableFuture.runAsync { intcodeE.runProgram() }
+    CompletableFuture.runAsync { intcodeE.runProgram() }.get()
 
-    latch.await()
     return intcodeE.outputs.last()
 }
 

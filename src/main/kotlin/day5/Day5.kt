@@ -80,8 +80,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 class IntCode(
     originalProgram: List<Long>,
     val inputs: BlockingQueue<Long>,
-    val outputListener: (Long) -> Unit = {},
-    val finishListener: () -> Unit = {}
+    val outputListener: (Long) -> Unit = {}
 ) {
 
     constructor(originalProgram: List<Int>, inputs: List<Int>) : this(
@@ -119,8 +118,6 @@ class IntCode(
             }
             instruction = memory[instructionPointer]
         }
-
-        finishListener()
     }
 
     fun output(value: Long) {
