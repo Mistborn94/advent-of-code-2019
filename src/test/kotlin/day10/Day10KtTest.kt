@@ -2,9 +2,7 @@ package day10
 
 import helper.readInput
 import org.junit.Test
-import java.lang.Math.PI
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 class Day10KtTest {
 
@@ -88,11 +86,11 @@ class Day10KtTest {
 
     @Test
     fun samplesA() {
-        assertEquals(8, day10.solveA(sample8.lines()).second)
-        assertEquals(33, day10.solveA(sample33.lines()).second)
-        assertEquals(35, day10.solveA(sample35.lines()).second)
-        assertEquals(41, day10.solveA(sample41.lines()).second)
-        assertEquals(210, day10.solveA(sample210.lines()).second)
+        assertEquals(8, solveA(sample8.lines()).second)
+        assertEquals(33, solveA(sample33.lines()).second)
+        assertEquals(35, solveA(sample35.lines()).second)
+        assertEquals(41, solveA(sample41.lines()).second)
+        assertEquals(210, solveA(sample210.lines()).second)
     }
 
     @Test
@@ -115,19 +113,13 @@ class Day10KtTest {
         assertEquals(906, solveB(sample210.lines(), 199))
         assertEquals(802, solveB(sample210.lines(), 200))
         assertEquals(1009, solveB(sample210.lines(), 201))
-//        assertEquals(1101, solveB(sample210.lines(), 299))
     }
 
     @Test
     fun solveB() {
         val lines = readInput(10).readLines()
         val solveB = solveB(lines, 200)
-        assertNotEquals(112, solveB)
-        assertNotEquals(900, solveB)
+        assertEquals(608, solveB)
         println("Day 10 B $solveB")
     }
-}
-
-private fun Int.toRadians(): Double {
-    return this * PI / 180
 }

@@ -4,39 +4,36 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 data class Vector(val x: Int, val y: Int) {
-
-    fun magnitude(): Double {
-        return sqrt((x * x + y * y).toDouble())
-    }
+    fun magnitude(): Double = sqrt((x * x + y * y).toDouble())
 }
 
 data class Point(val x: Int, val y: Int) {
-
-    operator fun minus(other: Point): Vector {
-        return Vector(x - other.x, y - other.y)
-    }
-
-    operator fun plus(other: Point): Point {
-        return Point(x + other.x, y + other.y)
-    }
+    operator fun minus(other: Point): Vector = Vector(x - other.x, y - other.y)
+    fun rayTo(other: Point): Ray = Ray.of(this, other)
 }
 
+data class Ray(val side: Int, val slope: Double) : Comparable<Ray> {
 
-fun solveA(lines: List<String>): Pair<Point, Int> {
-    val asteroids = buildAsteroidList(lines)
+    override fun compareTo(other: Ray): Int {
+        val sideCompare = side.compareTo(other.side)
+        return if (sideCompare != 0) sideCompare else other.slope.compareTo(slope)
+    }
 
-    return determineStationPosition(asteroids)
+    companion object {
+        fun of(stationPosition: Point, asteroid: Point): Ray {
+            val slope = slope(stationPosition, asteroid)
+            val half = side(stationPosition, asteroid)
+            return Ray(half, slope)
+        }
+    }
 }
 
 private fun determineStationPosition(asteroids: List<Point>) =
-    asteroids.map { it to seenAsteroids(it, asteroids) }.maxBy { it.second }!!
+    asteroids.map { it to getRays(it, asteroids).size }.maxBy { (_, count) -> count }!!
 
-data class Ray(val half: Int, val slope: Double) : Comparable<Ray> {
-
-    override fun compareTo(other: Ray): Int {
-        val quadrantCompare = half.compareTo(other.half)
-        return if (quadrantCompare != 0) quadrantCompare else other.slope.compareTo(slope)
-    }
+fun solveA(lines: List<String>): Pair<Point, Int> {
+    val asteroids = buildAsteroidList(lines)
+    return determineStationPosition(asteroids)
 }
 
 fun solveB(lines: List<String>, asteroidIndex: Int): Int {
@@ -44,41 +41,31 @@ fun solveB(lines: List<String>, asteroidIndex: Int): Int {
     val stationPosition = determineStationPosition(asteroids).first
 
     val rays = getRays(stationPosition, asteroids)
+    val sortedRays = rays.keys.sorted()
 
-    val sortedLines = rays.keys.sorted()
-
-    if (sortedLines.size < asteroidIndex) {
-        throw IllegalStateException("Cannot handle an asteroidIndex $asteroidIndex greater than ${sortedLines.size} lines")
+    if (asteroidIndex > sortedRays.size) {
+        throw IllegalStateException("Cannot handle an asteroidIndex $asteroidIndex greater than ${sortedRays.size} lines")
     }
 
-    val destroyingRay = sortedLines[asteroidIndex - 1]
-    val ray200 = rays.getValue(destroyingRay)
-    val destroyedPlanet = ray200.minBy { (it - stationPosition).magnitude() }!!
+    val nthRay = sortedRays[asteroidIndex - 1]
+    val rayAsteroids = rays.getValue(nthRay)
+    val nthAsteroid = rayAsteroids.minBy { (it - stationPosition).magnitude() }!!
     // Undo the initial y-negation to get the correct answer
-    return destroyedPlanet.x * 100 + abs(destroyedPlanet.y)
+    return nthAsteroid.x * 100 + abs(nthAsteroid.y)
 }
 
 private fun getRays(stationPosition: Point, asteroids: List<Point>): Map<Ray, List<Point>> {
     return asteroids.filter { it != stationPosition }
-        .groupByTo(sortedMapOf<Ray, MutableList<Point>>()) {
-            val slope = slope(stationPosition, it)
-            val half = half(stationPosition, it)
-            Ray(half, slope)
-        }
+        .groupByTo(sortedMapOf<Ray, MutableList<Point>>(), stationPosition::rayTo)
 }
 
-private fun slope(first: Point, second: Point) =
-    (second.y - first.y).toDouble() / (second.x - first.x).toDouble()
-
-fun seenAsteroids(currentAsteroid: Point, asteroids: List<Point>): Int {
-    return getRays(currentAsteroid, asteroids).size
-}
+private fun slope(first: Point, second: Point) = (second.y - first.y).toDouble() / (second.x - first.x).toDouble()
 
 /**
  *  1 | 0
  *  1 | 0
  */
-private fun half(a: Point, b: Point): Int {
+private fun side(a: Point, b: Point): Int {
     val vec = b - a
     return if (vec.x >= 0) {
         0
