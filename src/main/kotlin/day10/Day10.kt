@@ -1,5 +1,6 @@
 package day10
 
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 data class Vector(val x: Int, val y: Int) {
@@ -53,7 +54,8 @@ fun solveB(lines: List<String>, asteroidIndex: Int): Int {
     val destroyingRay = sortedLines[asteroidIndex - 1]
     val ray200 = rays.getValue(destroyingRay)
     val destroyedPlanet = ray200.minBy { (it - stationPosition).magnitude() }!!
-    return destroyedPlanet.x * 100 + destroyedPlanet.y
+    // Undo the initial y-negation to get the correct answer
+    return destroyedPlanet.x * 100 + abs(destroyedPlanet.y)
 }
 
 private fun getRays(stationPosition: Point, asteroids: List<Point>): Map<Ray, List<Point>> {
@@ -65,9 +67,8 @@ private fun getRays(stationPosition: Point, asteroids: List<Point>): Map<Ray, Li
         }
 }
 
-//The Slope y is swapped due to the inverted coordinate system
 private fun slope(first: Point, second: Point) =
-    (first.y - second.y).toDouble() / (second.x - first.x).toDouble()
+    (second.y - first.y).toDouble() / (second.x - first.x).toDouble()
 
 fun seenAsteroids(currentAsteroid: Point, asteroids: List<Point>): Int {
     return getRays(currentAsteroid, asteroids).size
@@ -92,7 +93,8 @@ private fun buildAsteroidList(lines: List<String>): List<Point> {
     lines.forEachIndexed { y, line ->
         line.forEachIndexed { x, char ->
             if (char == '#') {
-                asteroids.add(Point(x, y))
+                //Negative y to cater for the inverted y-axis
+                asteroids.add(Point(x, -y))
             }
         }
     }
