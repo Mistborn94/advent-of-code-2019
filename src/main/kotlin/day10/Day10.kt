@@ -86,6 +86,6 @@ private fun buildAsteroidList(lines: List<String>): List<Point> {
         }
     }
 
-    return asteroids;
+    return asteroids
 }
 
