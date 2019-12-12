@@ -32,11 +32,6 @@ class Day12KtTest {
         assertEquals(179, solveA(sample1.lines(), 10))
     }
 
-//    @Test
-//    fun sampleB1() {
-//        assertEquals(2772, solveB(sample1.lines()))
-//    }
-
     @Test
     fun sampleB2() {
         assertEquals(4686774924, solveB(sample2.lines()))
@@ -49,12 +44,16 @@ class Day12KtTest {
 
     @Test
     fun solveA() {
-        println("Day 12A  ${solveA(puzzleInput.lines(), 1000)}")
+        val solveA = solveA(puzzleInput.lines(), 1000)
+        assertEquals(10635, solveA)
+        println("Day 12A  $solveA")
     }
     
     @Test
     fun solveB() {
         println("Starting Solve B")
-        println("Day 12B  ${solveB(puzzleInput.lines())}")
+        val solveB = solveB(puzzleInput.lines())
+        assertEquals(583523031727256, solveB)
+        println("Day 12B  $solveB")
     }
 }

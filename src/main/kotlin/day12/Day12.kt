@@ -4,13 +4,7 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import kotlin.math.abs
 
-interface XYZ {
-    val x: Int
-    val y: Int
-    val z: Int
-}
-
-data class Point(override val x: Int, override val y: Int, override val z: Int) : XYZ {
+data class Point(val x: Int, val y: Int, val z: Int) {
     operator fun plus(vector: Vector) = Point(x + vector.x, y + vector.y, z + vector.z)
     fun magnitude(): Int = abs(x) + abs(y) + abs(z)
 
@@ -19,7 +13,7 @@ data class Point(override val x: Int, override val y: Int, override val z: Int) 
     }
 }
 
-data class Vector(override val x: Int, override val y: Int, override val z: Int) : XYZ {
+data class Vector(val x: Int, val y: Int, val z: Int) {
     operator fun plus(other: Vector) = Vector(x + other.x, y + other.y, z + other.z)
     fun magnitude(): Int = abs(x) + abs(y) + abs(z)
 
@@ -32,10 +26,6 @@ data class Vector(override val x: Int, override val y: Int, override val z: Int)
     }
 }
 
-operator fun StringBuilder.plusAssign(chars: CharSequence) {
-    this.append(chars)
-}
-
 class Pattern {
 
     var size = 0
@@ -43,7 +33,6 @@ class Pattern {
     var searchIndex = 0
 
     var solved = false
-        private set
 
     private var currentStart = ArrayList<Int>()
     private var currentPattern = ArrayList<Int>()
@@ -94,7 +83,7 @@ class PatternSet {
     val solved: Boolean
         get() = x.solved && y.solved && z.solved
 
-    fun add(values: XYZ) {
+    fun add(values: Point) {
         x.add(values.x)
         y.add(values.y)
         z.add(values.z)
@@ -107,8 +96,6 @@ class Moon(val id: Int, var position: Point, var velocity: Vector = Vector.ZERO)
         get() = position.magnitude()
     private val kineticEnergy: Int
         get() = velocity.magnitude()
-
-    val positionPatterns = PatternSet()
 
     val energy: Int
         get() = potentialEnergy * kineticEnergy
@@ -131,9 +118,6 @@ class Moon(val id: Int, var position: Point, var velocity: Vector = Vector.ZERO)
     override fun toString(): String {
         return "$position\t.\t$velocity"
     }
-
-    val hasAllPatterns: Boolean
-        get() = positionPatterns.solved // && velocityPatterns.solved
 }
 
 val pattern = "<x=([0-9-]+), y=([0-9-]+), z=([0-9-]+)>".toRegex()
@@ -155,14 +139,14 @@ fun solveB(lines: List<String>): Long {
     val moons = buildMoons(lines)
     val moonPairs = getMoonPairs(moons)
 
-    while (!moons[0].hasAllPatterns ) {
+    while (!pattern.solved) {
         pattern.add(moons[0].position)
         runStep(moonPairs, moons)
     }
 
-    val maxX = moons.map { it.positionPatterns.x.size }.max()!!
-    val maxY = moons.map { it.positionPatterns.y.size }.max()!!
-    val maxZ = moons.map { it.positionPatterns.z.size }.max()!!
+    val maxX = pattern.x.size
+    val maxY = pattern.y.size
+    val maxZ = pattern.z.size
 
     return lowestCommonMultiple(maxX, maxY, maxZ)
 }
