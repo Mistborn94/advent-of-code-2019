@@ -44,32 +44,26 @@ class Pattern {
 
     var solved = false
         private set
-    private var currentStart = StringBuilder()
-    private var currentPattern = StringBuilder()
+
+    private var currentStart = ArrayList<Int>()
+    private var currentPattern = ArrayList<Int>()
 
     private var finalPattern: String? = null
 
-    fun add(item: Any) {
+    fun add(item: Int) {
         if (!solved) {
             size += 1
-            val itemPattern = "$item,"
-            currentPattern += itemPattern
+            currentPattern.add(item)
 
-            if (!matchContinues(itemPattern)) {
+            if (!matchContinues(item)) {
                 while (!currentStart.startsWith(currentPattern)) {
-                    val index = currentPattern.indexOf(",")
-                    currentStart += currentPattern.substring(0, index + 1)
-
-                    if (currentPattern.length > index + 1) {
-                        currentPattern = StringBuilder(currentPattern.substring(index + 1))
-                    } else {
-                        currentPattern.clear()
-                    }
+                    currentStart.add(currentPattern[0])
+                    currentPattern.removeAt(0)
                 }
-                searchIndex = currentPattern.length
+                searchIndex = currentPattern.size
             } else {
-                searchIndex += itemPattern.length
-                if (currentPattern.isNotEmpty() && currentStart.toString() == currentPattern.toString()) {
+                searchIndex += 1
+                if (currentPattern.isNotEmpty() && currentStart == currentPattern) {
                     solved = true
                     finalPattern = currentPattern.toString()
                     size /= 2
@@ -79,10 +73,14 @@ class Pattern {
         }
     }
 
-    private fun matchContinues(itemPattern: String): Boolean {
-        val end = searchIndex + itemPattern.length
-        return currentStart.length > end && currentStart.substring(searchIndex, end) == itemPattern
+    private fun matchContinues(itemPattern: Int): Boolean {
+        return currentStart.size > searchIndex && currentStart[searchIndex] == itemPattern
     }
+}
+
+private fun <E> java.util.ArrayList<E>.startsWith(prefix: java.util.ArrayList<E>): Boolean {
+    return if (prefix.size > this.size) false
+    else prefix.indices.all { this[it] == prefix[it] }
 }
 
 class PatternSet {
@@ -158,7 +156,7 @@ fun solveB(lines: List<String>): Long {
     val moons = buildMoons(lines)
     val moonPairs = getMoonPairs(moons)
 
-    while (!moons.all { it.hasAllPatterns }) {
+    while (!moons[0].hasAllPatterns ) {
         runStep(moonPairs, moons)
     }
 
@@ -194,9 +192,7 @@ tailrec fun greatestCommonDenominator(a: Long, b: Long): Long {
 private fun runStep(
     moonPairs: List<Pair<Moon, Moon>>, moons: List<Moon>
 ) {
-    moons.forEach {
-        it.updatePatterns()
-    }
+    moons[0].updatePatterns()
     moonPairs.forEach { (a, b) ->
         a.applyGravity(b)
         b.applyGravity(a)

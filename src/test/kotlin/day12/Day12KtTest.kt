@@ -32,10 +32,10 @@ class Day12KtTest {
         assertEquals(179, solveA(sample1.lines(), 10))
     }
 
-    @Test
-    fun sampleB1() {
-        assertEquals(2772, solveB(sample1.lines()))
-    }
+//    @Test
+//    fun sampleB1() {
+//        assertEquals(2772, solveB(sample1.lines()))
+//    }
 
     @Test
     fun sampleB2() {
