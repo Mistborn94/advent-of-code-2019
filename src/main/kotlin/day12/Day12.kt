@@ -50,6 +50,9 @@ class Pattern {
 
     private var finalPattern: String? = null
 
+    //TODO: Alternate approach
+    //If position = initial, check if symmetric
+    //Probably waaaay more efficient
     fun add(item: Int) {
         if (!solved) {
             size += 1
@@ -106,14 +109,9 @@ class Moon(val id: Int, var position: Point, var velocity: Vector = Vector.ZERO)
         get() = velocity.magnitude()
 
     val positionPatterns = PatternSet()
-    private val velocityPatterns = PatternSet()
 
     val energy: Int
         get() = potentialEnergy * kineticEnergy
-
-    fun updatePatterns() {
-        positionPatterns.add(position)
-    }
 
     fun applyGravity(other: Moon) {
         val x = calculateChange(position.x, other.position.x)
@@ -153,10 +151,12 @@ fun solveA(lines: List<String>, steps: Int): Int {
 }
 
 fun solveB(lines: List<String>): Long {
+    val pattern = PatternSet()
     val moons = buildMoons(lines)
     val moonPairs = getMoonPairs(moons)
 
     while (!moons[0].hasAllPatterns ) {
+        pattern.add(moons[0].position)
         runStep(moonPairs, moons)
     }
 
@@ -174,7 +174,7 @@ fun lowestCommonMultiple(x: Int, y: Int, z: Int): Long {
 }
 
 fun lowestCommonMultiple(a: Long, b: Long): Long {
-    return a * b / greatestCommonDenominator(a, b)
+    return a / greatestCommonDenominator(a, b) * b
 }
 
 tailrec fun greatestCommonDenominator(a: Long, b: Long): Long {
@@ -192,7 +192,6 @@ tailrec fun greatestCommonDenominator(a: Long, b: Long): Long {
 private fun runStep(
     moonPairs: List<Pair<Moon, Moon>>, moons: List<Moon>
 ) {
-    moons[0].updatePatterns()
     moonPairs.forEach { (a, b) ->
         a.applyGravity(b)
         b.applyGravity(a)
