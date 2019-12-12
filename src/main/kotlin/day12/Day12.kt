@@ -4,26 +4,107 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import kotlin.math.abs
 
-data class Point(val x: Int, val y: Int, val z: Int) {
+interface XYZ {
+    val x: Int
+    val y: Int
+    val z: Int
+}
+
+data class Point(override val x: Int, override val y: Int, override val z: Int) : XYZ {
     operator fun plus(vector: Vector) = Point(x + vector.x, y + vector.y, z + vector.z)
     fun magnitude(): Int = abs(x) + abs(y) + abs(z)
+
+    override fun toString(): String {
+        return "(%3d,%3d,%3d)".format(x, y, z)
+    }
 }
 
-data class Vector(val x: Int, val y: Int, val z: Int) {
+data class Vector(override val x: Int, override val y: Int, override val z: Int) : XYZ {
     operator fun plus(other: Vector) = Vector(x + other.x, y + other.y, z + other.z)
-
     fun magnitude(): Int = abs(x) + abs(y) + abs(z)
+
+    override fun toString(): String {
+        return "<%3d,%3d,%3d>".format(x, y, z)
+    }
+
+    companion object {
+        val ZERO = Vector(0, 0, 0)
+    }
 }
 
-class Moon(val id: Int, var position: Point, var velocity: Vector = Vector(0, 0, 0)) {
+operator fun StringBuilder.plusAssign(chars: CharSequence) {
+    this.append(chars)
+}
+
+class Pattern {
+
+    var size = 0
+        private set
+
+    var solved = false
+        private set
+    private var currentStart = StringBuilder()
+    private var currentPattern = StringBuilder()
+
+    private var finalPattern: String? = null
+
+    fun add(item: Any) {
+        if (!solved) {
+            size += 1
+            currentPattern += "$item,"
+
+            if (!currentStart.startsWith(currentPattern)) {
+                while (!currentStart.startsWith(currentPattern)) {
+                    val index = currentPattern.indexOf(",")
+                    currentStart += currentPattern.substring(0, index + 1)
+
+                    if (currentPattern.length > index + 1) {
+                        currentPattern = StringBuilder(currentPattern.substring(index + 1))
+                    } else {
+                        currentPattern.clear()
+                    }
+                }
+            } else if (currentPattern.isNotEmpty() && currentStart.toString() == currentPattern.toString()) {
+                solved = true
+                finalPattern = currentPattern.toString()
+                size /= 2
+                println("Found Pattern with size ${size}")
+            }
+        }
+    }
+}
+
+class PatternSet {
+    val x = Pattern()
+    val y = Pattern()
+    val z = Pattern()
+
+    val solved: Boolean
+        get() = x.solved && y.solved && z.solved
+
+    fun add(values: XYZ) {
+        x.add(values.x)
+        y.add(values.y)
+        z.add(values.z)
+    }
+}
+
+class Moon(val id: Int, var position: Point, var velocity: Vector = Vector.ZERO) {
 
     private val potentialEnergy: Int
         get() = position.magnitude()
     private val kineticEnergy: Int
         get() = velocity.magnitude()
 
+    val positionPatterns = PatternSet()
+    private val velocityPatterns = PatternSet()
+
     val energy: Int
         get() = potentialEnergy * kineticEnergy
+
+    fun updatePatterns() {
+        positionPatterns.add(position)
+    }
 
     fun applyGravity(other: Moon) {
         val x = calculateChange(position.x, other.position.x)
@@ -41,8 +122,11 @@ class Moon(val id: Int, var position: Point, var velocity: Vector = Vector(0, 0,
         min(1, max(-1, otherPosition - currentPosition))
 
     override fun toString(): String {
-        return "Moon(id=$id,position=$position, velocity=$velocity)"
+        return "$position\t.\t$velocity"
     }
+
+    val hasAllPatterns: Boolean
+        get() = positionPatterns.solved // && velocityPatterns.solved
 }
 
 val pattern = "<x=([0-9-]+), y=([0-9-]+), z=([0-9-]+)>".toRegex()
@@ -59,18 +143,56 @@ fun solveA(lines: List<String>, steps: Int): Int {
     return moons.sumBy { it.energy }
 }
 
-fun solveB(lines: List<String>) {
+fun solveB(lines: List<String>): Long {
+    val moons = buildMoons(lines)
+    val moonPairs = getMoonPairs(moons)
 
+    while (!moons.all { it.hasAllPatterns }) {
+        runStep(moonPairs, moons)
+    }
+
+    val maxX = moons.map { it.positionPatterns.x.size }.max()!!
+    val maxY = moons.map { it.positionPatterns.y.size }.max()!!
+    val maxZ = moons.map { it.positionPatterns.z.size }.max()!!
+
+    return lowestCommonMultiple(maxX, maxY, maxZ)
+}
+
+fun lowestCommonMultiple(x: Int, y: Int, z: Int): Long {
+    val xy = lowestCommonMultiple(x.toLong(), y.toLong())
+    val yz = lowestCommonMultiple(y.toLong(), z.toLong())
+    return lowestCommonMultiple(xy, yz)
+}
+
+fun lowestCommonMultiple(a: Long, b: Long): Long {
+    return a * b / greatestCommonDenominator(a, b)
+}
+
+tailrec fun greatestCommonDenominator(a: Long, b: Long): Long {
+    return when {
+        a == 0L -> b
+        b == 0L -> a
+        else -> {
+            val first = maxOf(a, b)
+            val second = minOf(a, b)
+            greatestCommonDenominator(second, first % second)
+        }
+    }
 }
 
 private fun runStep(
     moonPairs: List<Pair<Moon, Moon>>, moons: List<Moon>
 ) {
+    moons.forEach {
+        it.updatePatterns()
+    }
     moonPairs.forEach { (a, b) ->
         a.applyGravity(b)
         b.applyGravity(a)
     }
-    moons.forEach { it.move() }
+    moons.forEach {
+        it.move()
+    }
 }
 
 private fun getMoonPairs(moons: List<Moon>): List<Pair<Moon, Moon>> {

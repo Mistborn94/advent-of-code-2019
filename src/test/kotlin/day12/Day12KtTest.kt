@@ -27,14 +27,27 @@ class Day12KtTest {
     """.trimIndent()
 
     @Test
-    fun samplesA() {
+    fun sampleA1() {
         assertEquals(179, solveA(sample1.lines(), 10))
+    }
+
+    @Test
+    fun sampleB2() {
+        assertEquals(4686774924, solveB(sample2.lines()))
+    }
+
+    @Test
+    fun sampleA2() {
         assertEquals(1940, solveA(sample2.lines(), 100))
     }
 
     @Test
     fun solveA() {
-        //1142
-        println("Day 11A  ${solveA(puzzleInput.lines(), 1000)}")
+        println("Day 12A  ${solveA(puzzleInput.lines(), 1000)}")
+    }
+    
+    @Test
+    fun solveB() {
+        println("Day 12B  ${solveB(puzzleInput.lines())}")
     }
 }
