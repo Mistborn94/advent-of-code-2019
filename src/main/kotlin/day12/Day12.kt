@@ -40,6 +40,7 @@ class Pattern {
 
     var size = 0
         private set
+    var searchIndex = 0
 
     var solved = false
         private set
@@ -51,9 +52,10 @@ class Pattern {
     fun add(item: Any) {
         if (!solved) {
             size += 1
-            currentPattern += "$item,"
+            val itemPattern = "$item,"
+            currentPattern += itemPattern
 
-            if (!currentStart.startsWith(currentPattern)) {
+            if (!matchContinues(itemPattern)) {
                 while (!currentStart.startsWith(currentPattern)) {
                     val index = currentPattern.indexOf(",")
                     currentStart += currentPattern.substring(0, index + 1)
@@ -64,13 +66,22 @@ class Pattern {
                         currentPattern.clear()
                     }
                 }
-            } else if (currentPattern.isNotEmpty() && currentStart.toString() == currentPattern.toString()) {
-                solved = true
-                finalPattern = currentPattern.toString()
-                size /= 2
-                println("Found Pattern with size ${size}")
+                searchIndex = currentPattern.length
+            } else {
+                searchIndex += itemPattern.length
+                if (currentPattern.isNotEmpty() && currentStart.toString() == currentPattern.toString()) {
+                    solved = true
+                    finalPattern = currentPattern.toString()
+                    size /= 2
+                    println("Found Pattern with size $size")
+                }
             }
         }
+    }
+
+    private fun matchContinues(itemPattern: String): Boolean {
+        val end = searchIndex + itemPattern.length
+        return currentStart.length > end && currentStart.substring(searchIndex, end) == itemPattern
     }
 }
 

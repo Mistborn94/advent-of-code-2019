@@ -1,6 +1,7 @@
 package day12
 
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 
 class Day12KtTest {
@@ -32,6 +33,11 @@ class Day12KtTest {
     }
 
     @Test
+    fun sampleB1() {
+        assertEquals(2772, solveB(sample1.lines()))
+    }
+
+    @Test
     fun sampleB2() {
         assertEquals(4686774924, solveB(sample2.lines()))
     }
@@ -48,6 +54,7 @@ class Day12KtTest {
     
     @Test
     fun solveB() {
+        println("Starting Solve B")
         println("Day 12B  ${solveB(puzzleInput.lines())}")
     }
 }
