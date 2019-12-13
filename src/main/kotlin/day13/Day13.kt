@@ -3,6 +3,7 @@ package day13
 import day3.Point
 import day5.IntCode
 import helper.readInput
+import java.io.File
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
@@ -11,15 +12,17 @@ import java.util.concurrent.LinkedBlockingQueue
 class ArcadeGame(
     val instructionQueue: BlockingQueue<Long>,
     val renderQueue: BlockingQueue<Long>,
-    val notifyQueue: BlockingQueue<Boolean>
+    val notifyQueue: BlockingQueue<Boolean>,
+    val replayCommands: Queue<Int>
 ) {
 
+    val commandHistory = mutableListOf<Int>()
     private val mapChars = mapOf(
         0 to ' ',
         1 to '|',
         2 to 'X',
-        3 to '_',
-        4 to 'o'
+        3 to '▀',
+        4 to 'O'
     )
 
     private val inputs = mapOf(
@@ -69,9 +72,18 @@ class ArcadeGame(
 
     private fun promptInput() {
         println("Move your joystick (a/s/d): ")
-        val line = readLine() ?: throw IllegalStateException("Need Input")
-        val input = inputs.getValue(line[0])
+        val input = if (!replayCommands.isEmpty()) {
+            replayCommands.remove()
+        } else {
+            var line = readLine()
+            while (line.isNullOrEmpty()) {
+                line = readLine()
+            }
+
+            inputs.getValue(line[0])
+        }
         println("Registered input $input")
+        commandHistory.add(input)
         instructionQueue.put(input.toLong())
     }
 
@@ -100,7 +112,7 @@ fun solveA(program: List<Long>): Int {
     return map.values.count { it == 2 }
 }
 
-fun runB(program: List<Long>): Int {
+fun runB(program: List<Long>, initialCommands: List<Int>): ArcadeGame {
     val renderQueue = LinkedBlockingQueue<Long>()
     val instructionQueue = LinkedBlockingQueue<Long>()
     val notifyQueue = LinkedBlockingQueue<Boolean>()
@@ -109,7 +121,7 @@ fun runB(program: List<Long>): Int {
     freeProgram[0] = 2
 
     val intCode = IntCode(freeProgram, instructionQueue, renderQueue) { notifyQueue.add(true) }
-    val game = ArcadeGame(instructionQueue, renderQueue, notifyQueue)
+    val game = ArcadeGame(instructionQueue, renderQueue, notifyQueue, LinkedList(initialCommands))
 
     val intCodeFuture = CompletableFuture.runAsync { intCode.runProgram() }
     val arcadeFuture = CompletableFuture.runAsync { game.runProgram() }
@@ -118,11 +130,24 @@ fun runB(program: List<Long>): Int {
     notifyQueue.add(false)
     arcadeFuture.get()
 
-    return game.currentScore
+    return game
 }
 
 fun main() {
+    val replayFile = File("src/main/resources/day13/replay.txt")
+
+    if (!replayFile.exists()) {
+        replayFile.createNewFile()
+    }
+
+    val readText = replayFile.readText()
+    val replaySteps = if (readText.isNotEmpty())
+        readText.split(",").map(String::toInt)
+    else emptyList()
+
     val program = readInput(13).readText().trim().split(",").map(String::toLong)
-    val runB = runB(program)
-    println("Day 13 B: $runB")
+    val runB = runB(program, replaySteps)
+    println("Final Score: ${runB.currentScore}")
+
+    replayFile.writeText(runB.commandHistory.subList(0, runB.commandHistory.size).joinToString(separator = ","))
 }
