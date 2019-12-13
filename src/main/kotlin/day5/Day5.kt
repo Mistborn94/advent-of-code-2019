@@ -80,7 +80,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 class IntCode(
     originalProgram: List<Long>,
     val inputs: BlockingQueue<Long>,
-    val outputListener: (Long) -> Unit = {}
+    val outputs: BlockingQueue<Long> = LinkedBlockingQueue()
 ) {
 
     constructor(originalProgram: List<Int>, inputs: List<Int>) : this(
@@ -89,7 +89,6 @@ class IntCode(
     )
 
     var memory = originalProgram.toMutableList()
-    val outputs = mutableListOf<Long>()
     var instructionPointer = 0
     var relativeBase = 0
 
@@ -122,7 +121,6 @@ class IntCode(
 
     fun output(value: Long) {
         outputs += value
-        outputListener(value)
     }
 
     fun nextInput(): Long {

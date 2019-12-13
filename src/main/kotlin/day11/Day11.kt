@@ -77,7 +77,7 @@ fun solveA(program: List<Long>): Int {
 
     val instructionQueue = LinkedBlockingQueue<Long>()
     val cameraQueue = LinkedBlockingQueue<Long>()
-    val intcode = IntCode(program, cameraQueue) { instructionQueue.put(it) }
+    val intcode = IntCode(program, cameraQueue, instructionQueue)
     val robot = Robot(cameraQueue, instructionQueue)
 
     val robotFuture = CompletableFuture.runAsync { robot.run() }
@@ -93,7 +93,7 @@ fun solveB(program: List<Long>): String {
 
     val instructionQueue = LinkedBlockingQueue<Long>()
     val cameraQueue = LinkedBlockingQueue<Long>()
-    val intcode = IntCode(program, cameraQueue) { instructionQueue.put(it) }
+    val intcode = IntCode(program, cameraQueue, instructionQueue)
     val robot = Robot(cameraQueue, instructionQueue, 1)
 
     val robotFuture = CompletableFuture.runAsync { robot.run() }

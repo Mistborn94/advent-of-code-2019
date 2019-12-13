@@ -50,6 +50,7 @@ class Day12KtTest {
     }
     
     @Test
+    @Ignore("This test is very slow")
     fun solveB() {
         println("Starting Solve B")
         val solveB = solveB(puzzleInput.lines())

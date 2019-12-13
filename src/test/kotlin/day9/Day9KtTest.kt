@@ -17,7 +17,7 @@ class Day9KtTest {
             it.outputs
         }
 
-        assertEquals(outputA, sampleA)
+        assertEquals(outputA.toList(), sampleA)
 
         val sampleB = listOf(1102, 34915192, 34915192, 7, 4, 7, 99, 0)
         val outputB = IntCode(sampleB, emptyList()).let {

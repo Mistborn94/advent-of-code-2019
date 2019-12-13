@@ -49,11 +49,11 @@ fun runUntilStopping(program: List<Long>, phases: List<Int>): Long {
     val queueD = LinkedBlockingQueue(listOf(phases[3].toLong()))
     val queueE = LinkedBlockingQueue(listOf(phases[4].toLong()))
 
-    val intcodeA = IntCode(program, queueA) { queueB.put(it) }
-    val intcodeB = IntCode(program, queueB) { queueC.put(it) }
-    val intcodeC = IntCode(program, queueC) { queueD.put(it) }
-    val intcodeD = IntCode(program, queueD) { queueE.put(it) }
-    val intcodeE = IntCode(program, queueE) { queueA.put(it) }
+    val intcodeA = IntCode(program, queueA, queueB)
+    val intcodeB = IntCode(program, queueB, queueC)
+    val intcodeC = IntCode(program, queueC, queueD)
+    val intcodeD = IntCode(program, queueD, queueE)
+    val intcodeE = IntCode(program, queueE, queueA)
 
     CompletableFuture.runAsync { intcodeA.runProgram() }
     CompletableFuture.runAsync { intcodeB.runProgram() }
