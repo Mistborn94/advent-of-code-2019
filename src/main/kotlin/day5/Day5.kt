@@ -37,7 +37,8 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
     INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].solutionIndex(intCode)
 
-        intCode[solutionIndex] = intCode.nextInput()
+        val nextInput = intCode.nextInput()
+        intCode[solutionIndex] = nextInput
     }),
     OUTPUT("04", 1, { intCode, params ->
         val arg1 = params[0].resolveValue(intCode)
@@ -80,7 +81,8 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 class IntCode(
     originalProgram: List<Long>,
     val inputs: BlockingQueue<Long>,
-    val outputs: BlockingQueue<Long> = LinkedBlockingQueue()
+    val outputs: BlockingQueue<Long> = LinkedBlockingQueue(),
+    val inputNotifier: () -> Unit = {}
 ) {
 
     constructor(originalProgram: List<Int>, inputs: List<Int>) : this(
@@ -124,6 +126,7 @@ class IntCode(
     }
 
     fun nextInput(): Long {
+        inputNotifier()
         return inputs.take()
     }
 

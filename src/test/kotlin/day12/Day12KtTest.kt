@@ -54,7 +54,7 @@ class Day12KtTest {
     fun solveB() {
         println("Starting Solve B")
         val solveB = solveB(puzzleInput.lines())
-        assertEquals(583523031727256, solveB)
+        assertEquals(583_523_031_727_256, solveB)
         println("Day 12B  $solveB")
     }
 }
