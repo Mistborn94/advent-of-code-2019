@@ -1,7 +1,7 @@
 package day13
 
-import helper.Point
 import day5.IntCode
+import helper.Point
 import helper.readInput
 import helper.resize
 import java.io.File
@@ -40,9 +40,9 @@ class ArcadeGame(
             currentScore = value
         } else {
             val char = mapChars.getValue(value)
-            grid.resize(y + 1, arrayListOf())
+            grid.resize(y + 1) { arrayListOf() }
             val row = grid[y]
-            row.resize(x + 1, ' ')
+            row.resize(x + 1) { ' ' }
             row[x] = char
         }
     }

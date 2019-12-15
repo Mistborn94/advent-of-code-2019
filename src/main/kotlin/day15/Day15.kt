@@ -3,21 +3,16 @@ package day15
 import day5.IntCode
 import helper.Direction
 import helper.Point
-import helper.log
-import java.util.*
 import java.util.concurrent.BlockingQueue
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.LinkedBlockingQueue
 
-enum class Cell(val s: String) {
+enum class Cell(val char: String) {
     SPACE("."),
     WALL("#"),
     OXYGEN_SYSTEM("*"),
-    START("O"),
-    DROID("D");
+    START("O");
 
     override fun toString(): String {
-        return s
+        return char
     }
 }
 
@@ -34,105 +29,126 @@ val resultCodes = mapOf(
     2 to Cell.OXYGEN_SYSTEM
 )
 
-class Droid(private val commands: BlockingQueue<Long>, private val results: BlockingQueue<Long>) {
+private val startingPosition = Point(0, 0)
 
-    @Volatile
-    var oxygenFound: Boolean = false
-        private set
+class Droid(val initialIntCodeProgram: List<Long>) {
 
-    val grid = Grid<Cell>()
+    private val grid = Grid<Cell>()
+
+    val pointsToTraverse = LinkedHashSet<Point>()
+
+    val seenPoints = mutableMapOf(
+        startingPosition to listOf<Long>()
+    )
 
     init {
         grid[0, 0] = Cell.START
+        pointsToTraverse.add(startingPosition)
     }
 
-    var currentPosition = Point(0, 0)
-    var currentDirection = Direction.RIGHT
-
-    val currentPath = Stack<Point>()
     var oxygenPosition: Point? = null
 
-    fun tryWalk() {
-        val nextPositions: List<Pair<Point, Direction>> = findUnknownNextPositions()
-        if (nextPositions.isEmpty()) {
-            backtrack()
-        } else {
-            val (nextPosition, nextDirection) = nextPositions[0]
-            val cellType = move(nextDirection)
-            println("Droid: CellType $cellType at $nextPosition")
+    fun explore() {
+        val currentPosition = pointsToTraverse.takeFirst()
+        val nextPositions: List<Pair<Point, Direction>> = currentPosition.unknownNeighbours()
+        val currentPath = seenPoints.getValue(currentPosition)
+
+        nextPositions.forEach { (nextPosition, nextDirection) ->
+            val command = directionCommands.getValue(nextDirection)
+            val newPath = currentPath + listOf(command.toLong())
+            val intCode = IntCode.ofLongs(initialIntCodeProgram, newPath)
+            intCode.runUtilInput()
+            val last = intCode.outputs.drainToList().last()
+            val cellType = resultCodes.getValue(last.toInt())
+
             grid[nextPosition] = cellType
 
             if (cellType != Cell.WALL) {
-                currentPath.push(currentPosition)
-                currentPosition = nextPosition
-                currentDirection = nextDirection
+                pointsToTraverse.add(nextPosition)
+                seenPoints[nextPosition] = newPath
             }
 
             if (cellType == Cell.OXYGEN_SYSTEM) {
-                oxygenFound = true
-                oxygenPosition = currentPosition
+                oxygenPosition = nextPosition
             }
         }
-        val actualType = grid[currentPosition]
-        grid[currentPosition] = Cell.DROID
-        println(grid)
-        grid[currentPosition] = actualType!!
-        println("----------------------------")
     }
 
-    private fun backtrack() {
-        val previousPosition = currentPath.pop()
-        val direction = Direction.fromPoint(currentPosition - previousPosition)
-        move(direction)
-        println("Droid: Backtraced to $previousPosition")
-        currentPosition = previousPosition
-        currentDirection = direction
-    }
-
-    private fun move(nextDirection: Direction): Cell {
-        println("Droid: Starting move $nextDirection")
-        val command = directionCommands.getValue(nextDirection)
-        commands.add(command.toLong())
-        println("Droid: Sent command $command, waiting for result")
-        return resultCodes.getValue(results.take().toInt())
-    }
-
-    private fun findUnknownNextPositions(): List<Pair<Point, Direction>> {
-        return listOf(
-            directionFromCurrent(currentDirection.left),
-            directionFromCurrent(currentDirection.left.left),
-            directionFromCurrent(currentDirection.right),
-            directionFromCurrent(currentDirection)
-        ).filter { (point, _) ->
-            grid[point] == null
+    fun searchForOxygen() {
+        while (oxygenPosition == null) {
+            explore()
         }
     }
 
-    private fun directionFromCurrent(direction: Direction) = Pair(currentPosition + direction.point, direction)
+    fun finishExploring() {
+        while (pointsToTraverse.isNotEmpty()) {
+            explore()
+        }
+    }
+
+    fun fillWithOxygen(): Int {
+        var oxygenCells = mutableSetOf(oxygenPosition!!)
+        var nextIteration = oxygenCells.flatMap { it.openNeighbours() }.filter { it !in oxygenCells }
+        var time = 0
+
+        while (nextIteration.isNotEmpty()) {
+            time += 1
+            oxygenCells.addAll(nextIteration)
+            nextIteration = oxygenCells.flatMap { it.openNeighbours() }.filter { it !in oxygenCells }
+        }
+        return time
+    }
+
+    private fun Point.unknownNeighbours(): List<Pair<Point, Direction>> {
+        return this.allNeighbours().filter { (point, _) ->
+            grid[point] == null && point !in this@Droid.seenPoints
+        }
+    }
+
+    private fun Point.openNeighbours(): List<Point> {
+        return allNeighbours().map { it.first }
+            .filter { point ->
+                grid[point] == Cell.SPACE
+            }
+    }
+
+    private fun Point.allNeighbours(): List<Pair<Point, Direction>> {
+        return listOf(
+            directionFromCurrent(this, Direction.UP),
+            directionFromCurrent(this, Direction.DOWN),
+            directionFromCurrent(this, Direction.LEFT),
+            directionFromCurrent(this, Direction.RIGHT)
+        )
+    }
+
+    private fun directionFromCurrent(currentPosition: Point, direction: Direction) =
+        Pair(currentPosition + direction.point, direction)
 }
 
+private fun <E> BlockingQueue<E>.drainToList(): List<E> {
+    val list = mutableListOf<E>()
+    this.drainTo(list)
+    return list
+}
 
-fun solveA(program: List<Long>) {
+private fun <E> MutableSet<E>.takeFirst(): E {
+    val first = this.first()
+    this.remove(first)
+    return first
+}
 
-    val commands = LinkedBlockingQueue<Long>(listOf<Long>(0, 0, 0, 0, 0, 0))
-    val results = LinkedBlockingQueue<Long>()
+fun solveA(program: List<Long>): Int {
+    val droid = Droid(program)
 
-    val intCode = IntCode(program, commands, results)
-    val droid = Droid(commands, results)
+    droid.searchForOxygen()
 
-    CompletableFuture.runAsync {
-        while (!droid.oxygenFound) {
-            intCode.runProgram()
-        }
-    }
+    return droid.seenPoints.getValue(droid.oxygenPosition!!).size
+}
 
-    CompletableFuture.runAsync {
-        while (!droid.oxygenFound) {
-            droid.tryWalk()
-        }
-    }.get()
+fun solveB(program: List<Long>): Int {
+    val droid = Droid(program)
 
+    droid.finishExploring()
 
-
-    println(" Found oxygen system at ${droid.oxygenPosition}")
+    return droid.fillWithOxygen()
 }

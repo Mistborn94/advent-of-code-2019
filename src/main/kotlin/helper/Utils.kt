@@ -2,13 +2,13 @@ package helper
 
 import java.util.ArrayList
 
-fun <T> ArrayList<T>.resize(minimumSize: Int, defaultValue: T) {
+fun <T> ArrayList<T>.resize(minimumSize: Int, supplier: () -> T) {
     if (minimumSize < 0) {
         throw IllegalArgumentException("Negative sizes not allowed")
     }
     ensureCapacity(minimumSize)
     while (size < minimumSize) {
-        add(defaultValue)
+        add(supplier())
     }
 }
 

@@ -1,6 +1,5 @@
 package day5
 
-import helper.log
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -37,14 +36,11 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
     }),
     INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].solutionIndex(intCode)
-        log("ICode: Waiting for input")
         val nextInput = intCode.nextInput()
-        log("ICode: Received input $nextInput")
         intCode[solutionIndex] = nextInput
     }),
     OUTPUT("04", 1, { intCode, params ->
         val arg1 = params[0].resolveValue(intCode)
-        log("ICode: Sending output $arg1")
         intCode.output(arg1)
     }),
     JUMP_TRUE("05", 2, { intCode, params ->
@@ -52,7 +48,6 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 != 0L) {
-            log("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -61,7 +56,6 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 == 0L) {
-            log("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -104,29 +98,38 @@ class IntCode(
         var instruction = memory[instructionPointer]
 
         while (instruction != 99L) {
-            val initialInstructionPointer = instructionPointer
-            val paddedInstruction = instruction.toString().padStart(5, '0')
-
-            val opCode = paddedInstruction.substring(3, 5)
-            val operation = OperationType.fromCode(opCode)
-
-            val params = (0 until operation.argCount).map { paramIndex ->
-                val operationIndex = 2 - paramIndex
-                val value = paddedInstruction.substring(operationIndex..operationIndex).toInt()
-                val type = ArgMode.values()[value]
-                Param(type, memory[instructionPointer + paramIndex + 1])
-            }
-
-            log("ICode: Executing $operation at $instructionPointer")
-            operation.run(this, params)
-
-            if (instructionPointer == initialInstructionPointer) {
-                instructionPointer += operation.size
-                log("ICode: Continuing to instruction $instructionPointer")
-            }
-            instruction = memory[instructionPointer]
+            instruction = runInstruction(instruction)
         }
-        log("ICode: Terminated")
+    }
+
+    fun runUtilInput() {
+        var instruction = memory[instructionPointer]
+
+        while (instruction != 99L && !(instruction == 3L && inputs.isEmpty())) {
+            instruction = runInstruction(instruction)
+        }
+    }
+
+    private fun runInstruction(instruction: Long): Long {
+        val initialInstructionPointer = instructionPointer
+        val paddedInstruction = instruction.toString().padStart(5, '0')
+
+        val opCode = paddedInstruction.substring(3, 5)
+        val operation = OperationType.fromCode(opCode)
+
+        val params = (0 until operation.argCount).map { paramIndex ->
+            val operationIndex = 2 - paramIndex
+            val value = paddedInstruction.substring(operationIndex..operationIndex).toInt()
+            val type = ArgMode.values()[value]
+            Param(type, memory[instructionPointer + paramIndex + 1])
+        }
+
+        operation.run(this, params)
+
+        if (instructionPointer == initialInstructionPointer) {
+            instructionPointer += operation.size
+        }
+        return memory[instructionPointer]
     }
 
     fun output(value: Long) {

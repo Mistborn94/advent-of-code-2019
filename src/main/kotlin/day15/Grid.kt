@@ -22,7 +22,9 @@ class Grid<T> {
         val resolvedY = resolveIndex(y)
         val targetList = resolveList(x, y)
 
-        resizeTargetList(targetList, resolvedX, resolvedY)
+        if (resolvedY !in targetList.indices || resolvedX !in targetList[resolvedY].indices) {
+            return null
+        }
         return targetList[resolvedY][resolvedX]
     }
 
@@ -41,12 +43,12 @@ class Grid<T> {
 
     private fun resizeTargetList(targetList: ArrayList<ArrayList<T?>>, resolvedX: Int, resolvedY: Int) {
         if (resolvedY !in targetList.indices) {
-            targetList.resize(resolvedY + 1, arrayListOf())
+            targetList.resize(resolvedY + 1) { arrayListOf() }
         }
 
         val row = targetList[resolvedY]
         if (resolvedX !in row.indices) {
-            row.resize(resolvedX + 1, null)
+            row.resize(resolvedX + 1) { null }
         }
     }
 
@@ -63,9 +65,13 @@ class Grid<T> {
     }
 
     override fun toString(): String {
+        val bottomLeft = bottomLeft.deepCopy()
+        val bottomRight = bottomRight.deepCopy()
+        val topLeft = topLeft.deepCopy()
+        val topRight = topRight.deepCopy()
+
         equalizeYLists(bottomLeft, bottomRight)
         equalizeYLists(topLeft, topRight)
-
         equalizeXLists(topLeft, bottomLeft)
         equalizeXLists(topRight, bottomRight)
 
@@ -78,11 +84,13 @@ class Grid<T> {
 
             for (i in bottomLeft.indices) {
                 append(bottomLeft[i].reversed().joinToString(separator = "", prefix = "|") { it?.toString() ?: " " })
-                append(bottomRight[i].joinToString(separator = "",  postfix = "|") { it?.toString() ?: " " })
+                append(bottomRight[i].joinToString(separator = "", postfix = "|") { it?.toString() ?: " " })
                 append("\n");
             }
         }
     }
+
+    private fun ArrayList<ArrayList<T?>>.deepCopy() = mapTo(ArrayList()) { ArrayList(it) }
 
     private fun equalizeXLists(
         listA: ArrayList<ArrayList<T?>>,
@@ -90,10 +98,10 @@ class Grid<T> {
     ) {
         val size = (listA + listB).map { it.size }.max() ?: 0
         listA.forEach {
-            it.resize(size, null)
+            it.resize(size) { null }
         }
         listB.forEach {
-            it.resize(size, null)
+            it.resize(size) { null }
         }
     }
 
@@ -102,9 +110,7 @@ class Grid<T> {
         listB: ArrayList<ArrayList<T?>>
     ) {
         val size = max(listA.size, listB.size)
-        listA.resize(size, arrayListOf())
-        listB.resize(size, arrayListOf())
+        listA.resize(size) { arrayListOf() }
+        listB.resize(size) { arrayListOf() }
     }
-
-
 }
