@@ -1,7 +1,7 @@
 package day3
 
+import helper.Point
 import java.lang.Integer.max
-import kotlin.math.abs
 import kotlin.math.min
 
 enum class Orientation {
@@ -19,16 +19,6 @@ enum class Orientation {
 }
 
 class Intersection(val point: Point, val steps: Int)
-
-data class Point(val x: Int, val y: Int) {
-
-    fun abs(): Int {
-        return abs(x) + abs(y)
-    }
-
-    operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
-    operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
-}
 
 class Line(
     val start: Point,

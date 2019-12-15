@@ -1,42 +1,11 @@
 package day11
 
-import day3.Point
+import helper.Point
 import day5.IntCode
+import helper.Direction
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.LinkedBlockingQueue
-
-enum class Direction(val point: Point) {
-
-    UP(Point(0, 1)) {
-        override val right: Direction
-            get() = RIGHT
-        override val left: Direction
-            get() = LEFT
-    },
-    RIGHT(Point(1, 0)) {
-        override val right: Direction
-            get() = DOWN
-        override val left: Direction
-            get() = UP
-    },
-    DOWN(Point(0, -1)) {
-        override val right: Direction
-            get() = LEFT
-        override val left: Direction
-            get() = RIGHT
-    },
-    LEFT(Point(-1, 0)) {
-        override val right: Direction
-            get() = UP
-        override val left: Direction
-            get() = DOWN
-    };
-
-    abstract val right: Direction
-    abstract val left: Direction
-
-}
 
 data class Panel(var colour: Int, var painted: Boolean = false)
 

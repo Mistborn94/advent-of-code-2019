@@ -1,8 +1,9 @@
 package day13
 
-import day3.Point
+import helper.Point
 import day5.IntCode
 import helper.readInput
+import helper.resize
 import java.io.File
 import java.util.*
 import java.util.concurrent.BlockingQueue
@@ -85,13 +86,6 @@ class ArcadeGame(
         println("Registered input $input")
         commandHistory.add(input)
         instructionQueue.put(input.toLong())
-    }
-
-    private fun <T> ArrayList<T>.resize(minimumSize: Int, defaultValue: T) {
-        ensureCapacity(minimumSize)
-        while (size < minimumSize) {
-            add(defaultValue)
-        }
     }
 }
 

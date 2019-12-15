@@ -36,12 +36,14 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
     }),
     INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].solutionIndex(intCode)
-
+        println("ICode: Waiting for input")
         val nextInput = intCode.nextInput()
+        println("ICode: Received input $nextInput")
         intCode[solutionIndex] = nextInput
     }),
     OUTPUT("04", 1, { intCode, params ->
         val arg1 = params[0].resolveValue(intCode)
+        println("ICode: Sending output $arg1")
         intCode.output(arg1)
     }),
     JUMP_TRUE("05", 2, { intCode, params ->
@@ -49,6 +51,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 != 0L) {
+            println("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -57,6 +60,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 == 0L) {
+            println("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -80,7 +84,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
 
 class IntCode(
     originalProgram: List<Long>,
-    val inputs: BlockingQueue<Long>,
+    val inputs: BlockingQueue<Long> = LinkedBlockingQueue(),
     val outputs: BlockingQueue<Long> = LinkedBlockingQueue(),
     val inputNotifier: () -> Unit = {}
 ) {
@@ -99,7 +103,7 @@ class IntCode(
         var instruction = memory[instructionPointer]
 
         while (instruction != 99L) {
-            val startIndex = instructionPointer
+            val initialInstructionPointer = instructionPointer
             val paddedInstruction = instruction.toString().padStart(5, '0')
 
             val opCode = paddedInstruction.substring(3, 5)
@@ -112,13 +116,16 @@ class IntCode(
                 Param(type, memory[instructionPointer + paramIndex + 1])
             }
 
+            println("ICode: Executing $operation at $instructionPointer")
             operation.run(this, params)
 
-            if (instructionPointer == startIndex) {
+            if (instructionPointer == initialInstructionPointer) {
                 instructionPointer += operation.size
+                println("ICode: Continuing to instruction $instructionPointer")
             }
             instruction = memory[instructionPointer]
         }
+        println("ICode: Terminated")
     }
 
     fun output(value: Long) {
