@@ -3,6 +3,7 @@ package day15
 import day5.IntCode
 import helper.Direction
 import helper.Point
+import helper.log
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.CompletableFuture
@@ -12,6 +13,7 @@ enum class Cell(val s: String) {
     SPACE("."),
     WALL("#"),
     OXYGEN_SYSTEM("*"),
+    START("O"),
     DROID("D");
 
     override fun toString(): String {
@@ -20,7 +22,7 @@ enum class Cell(val s: String) {
 }
 
 val directionCommands = mapOf(
-    Direction.UP to 0,
+    Direction.UP to 1,
     Direction.DOWN to 2,
     Direction.LEFT to 3,
     Direction.RIGHT to 4
@@ -32,7 +34,7 @@ val resultCodes = mapOf(
     2 to Cell.OXYGEN_SYSTEM
 )
 
-class Droid(private val commands: BlockingQueue<Long>, private val results: BlockingQueue<Long>) : Runnable {
+class Droid(private val commands: BlockingQueue<Long>, private val results: BlockingQueue<Long>) {
 
     @Volatile
     var oxygenFound: Boolean = false
@@ -41,7 +43,7 @@ class Droid(private val commands: BlockingQueue<Long>, private val results: Bloc
     val grid = Grid<Cell>()
 
     init {
-        grid[0, 0] = Cell.DROID
+        grid[0, 0] = Cell.START
     }
 
     var currentPosition = Point(0, 0)
@@ -50,7 +52,7 @@ class Droid(private val commands: BlockingQueue<Long>, private val results: Bloc
     val currentPath = Stack<Point>()
     var oxygenPosition: Point? = null
 
-    private fun tryWalk() {
+    fun tryWalk() {
         val nextPositions: List<Pair<Point, Direction>> = findUnknownNextPositions()
         if (nextPositions.isEmpty()) {
             backtrack()
@@ -97,42 +99,38 @@ class Droid(private val commands: BlockingQueue<Long>, private val results: Bloc
 
     private fun findUnknownNextPositions(): List<Pair<Point, Direction>> {
         return listOf(
-            directionFromCurrent(Direction.UP),
-            directionFromCurrent(Direction.RIGHT),
-            directionFromCurrent(Direction.DOWN),
-            directionFromCurrent(Direction.LEFT)
+            directionFromCurrent(currentDirection.left),
+            directionFromCurrent(currentDirection.left.left),
+            directionFromCurrent(currentDirection.right),
+            directionFromCurrent(currentDirection)
         ).filter { (point, _) ->
             grid[point] == null
         }
     }
 
     private fun directionFromCurrent(direction: Direction) = Pair(currentPosition + direction.point, direction)
-
-    override fun run() {
-        while (!oxygenFound) {
-            tryWalk()
-        }
-    }
 }
 
 
 fun solveA(program: List<Long>) {
 
-    val commands = LinkedBlockingQueue<Long>(listOf<Long>(0,0,0,0,0,0))
+    val commands = LinkedBlockingQueue<Long>(listOf<Long>(0, 0, 0, 0, 0, 0))
     val results = LinkedBlockingQueue<Long>()
 
     val intCode = IntCode(program, commands, results)
     val droid = Droid(commands, results)
 
     CompletableFuture.runAsync {
-        var counter = 0
         while (!droid.oxygenFound) {
-            counter += 1
-            println("ICode: Loop $counter")
             intCode.runProgram()
         }
     }
-    CompletableFuture.runAsync(droid).get()
+
+    CompletableFuture.runAsync {
+        while (!droid.oxygenFound) {
+            droid.tryWalk()
+        }
+    }.get()
 
 
 

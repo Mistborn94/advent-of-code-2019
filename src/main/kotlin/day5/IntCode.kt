@@ -1,5 +1,6 @@
 package day5
 
+import helper.log
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -36,14 +37,14 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
     }),
     INPUT("03", 1, { intCode, params ->
         val solutionIndex = params[0].solutionIndex(intCode)
-        println("ICode: Waiting for input")
+        log("ICode: Waiting for input")
         val nextInput = intCode.nextInput()
-        println("ICode: Received input $nextInput")
+        log("ICode: Received input $nextInput")
         intCode[solutionIndex] = nextInput
     }),
     OUTPUT("04", 1, { intCode, params ->
         val arg1 = params[0].resolveValue(intCode)
-        println("ICode: Sending output $arg1")
+        log("ICode: Sending output $arg1")
         intCode.output(arg1)
     }),
     JUMP_TRUE("05", 2, { intCode, params ->
@@ -51,7 +52,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 != 0L) {
-            println("ICode: Jumping to $arg2")
+            log("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -60,7 +61,7 @@ enum class OperationType(val code: String, val argCount: Int, val run: (IntCode,
         val arg2 = params[1].resolveValue(intCode)
 
         if (arg1 == 0L) {
-            println("ICode: Jumping to $arg2")
+            log("ICode: Jumping to $arg2")
             intCode.instructionPointer = arg2.toInt()
         }
     }),
@@ -116,16 +117,16 @@ class IntCode(
                 Param(type, memory[instructionPointer + paramIndex + 1])
             }
 
-            println("ICode: Executing $operation at $instructionPointer")
+            log("ICode: Executing $operation at $instructionPointer")
             operation.run(this, params)
 
             if (instructionPointer == initialInstructionPointer) {
                 instructionPointer += operation.size
-                println("ICode: Continuing to instruction $instructionPointer")
+                log("ICode: Continuing to instruction $instructionPointer")
             }
             instruction = memory[instructionPointer]
         }
-        println("ICode: Terminated")
+        log("ICode: Terminated")
     }
 
     fun output(value: Long) {
