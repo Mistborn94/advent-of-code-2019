@@ -1,13 +1,9 @@
 package day16
 
 import helper.readInput
-import org.junit.FixMethodOrder
-import org.junit.Ignore
-import org.junit.Test
-import org.junit.runners.MethodSorters.NAME_ASCENDING
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@FixMethodOrder(NAME_ASCENDING)
 internal class Day16KtTest {
 
     val sampleA1 = "12345678"
@@ -33,26 +29,22 @@ internal class Day16KtTest {
     }
 
     @Test
-//    @Ignore("This is waaaaaay too slow. Needs some work")
     fun sampleB1() {
         assertEquals("84462026", solveB(sampleB1, repeat = 10_000))
     }
 
     @Test
-//    @Ignore("This is waaaaaay too slow. Needs some work")
     fun sampleB2() {
         assertEquals("78725270", solveB(sampleB2, repeat = 10_000))
     }
 
     @Test
-//    @Ignore("This is waaaaaay too slow. Needs some work")
     fun sampleB3() {
 
         assertEquals("53553731", solveB(sampleB3, repeat = 10_000))
     }
 
     @Test
-    @Ignore("This is waaaaaay too slow. Needs some work")
     fun solveB() {
         val input = readInput(16).readText().trim()
         val solveB = solveB(input, repeat = 10_000)
