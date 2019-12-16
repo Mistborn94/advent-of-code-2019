@@ -3,7 +3,6 @@ package day16
 import helper.readInput
 import org.junit.Ignore
 import org.junit.Test
-import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 internal class Day16KtTest {
@@ -30,14 +29,34 @@ internal class Day16KtTest {
     }
 
     @Test
+    fun experimentB() {
+        solveB(sampleB1, 10, repeat = 5)
+    }
+
+    @Test
+//    @Ignore("This is waaaaaay too slow. Needs some work")
+    fun sampleB1() {
+        assertEquals("84462026", solveB(sampleB1, repeat = 10_000))
+    }
+
+    @Test
     @Ignore("This is waaaaaay too slow. Needs some work")
-    fun samplesB() {
-        println("${LocalDateTime.now()} Starting Sample ")
-        assertEquals("84462026", solveB(sampleB1))
-        println("${LocalDateTime.now()} Starting Sample ")
-        assertEquals("78725270", solveB(sampleB2))
-        println("${LocalDateTime.now()} Starting Sample ")
-        assertEquals("53553731", solveB(sampleB3))
+    fun sampleB2() {
+        assertEquals("78725270", solveB(sampleB2, repeat = 10_000))
+    }
+
+    @Test
+    @Ignore("This is waaaaaay too slow. Needs some work")
+    fun sampleB3() {
+        assertEquals("53553731", solveB(sampleB3, repeat = 10_000))
+    }
+
+    @Test
+    @Ignore("This is waaaaaay too slow. Needs some work")
+    fun solveB() {
+        val input = readInput(16).readText().trim()
+        val solveB = solveB(input, repeat = 10_000)
+        println("Day 16B $solveB")
     }
 
     @Test

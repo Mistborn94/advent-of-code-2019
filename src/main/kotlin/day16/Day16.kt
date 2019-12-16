@@ -1,5 +1,6 @@
 package day16
 
+import java.time.LocalDateTime
 import kotlin.math.abs
 
 val basePattern = listOf(0, 1, 0, -1)
@@ -14,68 +15,62 @@ fun solveA(pattern: String, iterations: Int = 100): String {
     var currentPattern = pattern.toCharArray().map { it.toString().toInt() }
 
     repeat(iterations) {
-        currentPattern = calculatePhase(currentPattern)
+        currentPattern = calculatePhase(it, currentPattern)
     }
 
     return currentPattern.subList(0, 8).joinToString(separator = "")
 }
 
 private fun calculatePhase(
+    iteration: Int,
     currentSignal: List<Int>
 ): List<Int> {
     return currentSignal.mapIndexed { outputElementIndex, _ ->
-
-        val sum = currentSignal.mapIndexed { index, value ->
-            val patternValue = patternValue(outputElementIndex + 1, index)
-            value * patternValue
-        }.sum()
-
-        val lastDigit = abs(sum) % 10
-        lastDigit
-    }
-}
-
-private fun calculatePhase(
-    iteration: Int,
-    currentSignal: Sequence<Int>
-): Sequence<Int> {
-    val signalList = currentSignal.toList()
-    return signalList.asSequence().mapIndexed { outputElementIndex, _ ->
-        val digit = calculateDigit(outputElementIndex, iteration, signalList)
-        digit
+        calculateDigit(outputElementIndex + 1, iteration, currentSignal)
     }
 }
 
 private fun calculateDigit(
-    outputElementIndex: Int,
+    outputElement: Int,
     iteration: Int,
     currentSignal: List<Int>
 ): Int {
-    if (outputElementIndex % 10_000 == 0) {
-        println("Mapping iteration $iteration $outputElementIndex")
+    if (outputElement % 5_000 == 0) {
+        logIteration(iteration, outputElement, currentSignal)
     }
-    val sum = currentSignal.mapIndexed { index, value ->
-        val patternValue = patternValue(outputElementIndex + 1, index)
-        value * patternValue
-    }.sum()
+
+    val sum = currentSignal.subList(outputElement - 1, currentSignal.size).foldIndexed(0) { index, acc, next ->
+        val patternValue = patternValue(outputElement, outputElement - 1 + index)
+        acc + (next * patternValue)
+    }
+
     return abs(sum) % 10
 }
 
-fun solveB(pattern: String, iterations: Int = 100): String {
+fun solveB(pattern: String, iterations: Int = 100, repeat: Int): String {
     val patternNumbers = pattern.toCharArray().map { it.toString().toInt() }
 
     var currentPattern = sequence {
-        repeat(10_000) {
+        repeat(repeat) {
             yieldAll(patternNumbers)
         }
-    }
+    }.toList()
 
-    repeat(iterations) {
-        currentPattern = calculatePhase(it, currentPattern)
+    repeat(iterations) { iteration ->
+        currentPattern = calculatePhase(iteration, currentPattern)
     }
     val solutionOffset = pattern.substring(0, 8).toInt()
 
     currentPattern.take(solutionOffset)
     return currentPattern.take(8).joinToString(separator = "")
 }
+
+private fun logIteration(
+    iteration: Int,
+    outputElement: Int,
+    currentSignal: List<Int>
+) {
+    println("${LocalDateTime.now()} Mapping iteration $iteration output $outputElement with size ${currentSignal.size}")
+}
+
 
