@@ -13,11 +13,13 @@ fun solveA(pattern: String, iterations: Int = 100): String {
 fun solveB(pattern: String, iterations: Int = 100, repeat: Int): String {
     val patternNumbers = pattern.toCharArray().map { it.toString().toInt() }
 
-    val currentPattern = sequence {
-        repeat(repeat) {
-            yieldAll(patternNumbers)
-        }
-    }.toList()
+    val currentPattern = ArrayList<Int>(patternNumbers.size * repeat).run {
+        sequence {
+            repeat(repeat) {
+                yieldAll(patternNumbers)
+            }
+        }.toCollection(this)
+    }
 
     val solutionOffset = pattern.substring(0, 7).toInt()
     val solver = Solver(currentPattern, iterations, solutionOffset + 1..solutionOffset + 8)
