@@ -18,6 +18,7 @@ internal class Day16KtTest {
 
     @Test
     fun samplesA() {
+        assertEquals(sampleA1, solveA(sampleA1, 0))
         assertEquals("48226158", solveA(sampleA1, 1))
         assertEquals("34040438", solveA(sampleA1, 2))
         assertEquals("03415518", solveA(sampleA1, 3))
@@ -29,12 +30,7 @@ internal class Day16KtTest {
     }
 
     @Test
-    fun experimentB() {
-        solveB(sampleB1, 10, repeat = 5)
-    }
-
-    @Test
-//    @Ignore("This is waaaaaay too slow. Needs some work")
+    @Ignore("This is waaaaaay too slow. Needs some work")
     fun sampleB1() {
         assertEquals("84462026", solveB(sampleB1, repeat = 10_000))
     }
@@ -46,7 +42,7 @@ internal class Day16KtTest {
     }
 
     @Test
-    @Ignore("This is waaaaaay too slow. Needs some work")
+//    @Ignore("This is waaaaaay too slow. Needs some work")
     fun sampleB3() {
         assertEquals("53553731", solveB(sampleB3, repeat = 10_000))
     }

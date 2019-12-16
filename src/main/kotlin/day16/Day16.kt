@@ -1,76 +1,91 @@
 package day16
 
-import java.time.LocalDateTime
 import kotlin.math.abs
+import kotlin.math.min
 
 val basePattern = listOf(0, 1, 0, -1)
 
-fun patternValue(outputElement: Int, index: Int): Int {
-    val resolvedIndex = (index + 1) % (4 * outputElement)
-    val group = resolvedIndex / outputElement
-    return basePattern[group]
-}
-
 fun solveA(pattern: String, iterations: Int = 100): String {
-    var currentPattern = pattern.toCharArray().map { it.toString().toInt() }
-
-    repeat(iterations) {
-        currentPattern = calculatePhase(it, currentPattern)
-    }
-
-    return currentPattern.subList(0, 8).joinToString(separator = "")
-}
-
-private fun calculatePhase(
-    iteration: Int,
-    currentSignal: List<Int>
-): List<Int> {
-    return currentSignal.mapIndexed { outputElementIndex, _ ->
-        calculateDigit(outputElementIndex + 1, iteration, currentSignal)
-    }
-}
-
-private fun calculateDigit(
-    outputElement: Int,
-    iteration: Int,
-    currentSignal: List<Int>
-): Int {
-    if (outputElement % 5_000 == 0) {
-        logIteration(iteration, outputElement, currentSignal)
-    }
-
-    val sum = currentSignal.subList(outputElement - 1, currentSignal.size).foldIndexed(0) { index, acc, next ->
-        val patternValue = patternValue(outputElement, outputElement - 1 + index)
-        acc + (next * patternValue)
-    }
-
-    return abs(sum) % 10
+    val currentPattern = pattern.toCharArray().map { it.toString().toInt() }
+    return Solver(currentPattern, iterations, 1..8).solve().joinToString(separator = "")
 }
 
 fun solveB(pattern: String, iterations: Int = 100, repeat: Int): String {
     val patternNumbers = pattern.toCharArray().map { it.toString().toInt() }
 
-    var currentPattern = sequence {
+    val currentPattern = sequence {
         repeat(repeat) {
             yieldAll(patternNumbers)
         }
     }.toList()
 
-    repeat(iterations) { iteration ->
-        currentPattern = calculatePhase(iteration, currentPattern)
-    }
-    val solutionOffset = pattern.substring(0, 8).toInt()
+    val solutionOffset = pattern.substring(0, 7).toInt()
+    val solver = Solver(currentPattern, iterations, solutionOffset + 1..solutionOffset + 8)
 
-    currentPattern.take(solutionOffset)
-    return currentPattern.take(8).joinToString(separator = "")
+    return solver.solve().joinToString(separator = "")
 }
 
-private fun logIteration(
-    iteration: Int,
-    outputElement: Int,
-    currentSignal: List<Int>
+class Solver(
+    private val initialPattern: List<Int>,
+    private val requiredIterations: Int,
+    private val requiredOutputElements: IntRange
 ) {
-    println("${LocalDateTime.now()} Mapping iteration $iteration output $outputElement with size ${currentSignal.size}")
+    private val lastOutputElement = initialPattern.size
+    private val firstOutputElement = requiredOutputElements.first
+
+    private val iterations: MutableMap<Int, Array<Int?>> = mutableMapOf()
+    private val finalDigit = initialPattern[lastOutputElement - 1]
+
+    fun solve(): List<Int> {
+        return requiredOutputElements.map { solveDigit(requiredIterations, it) }
+    }
+
+    private fun sumDigits(iteration: Int, digits: Iterable<Int>): Int {
+        return digits.fold(0) { acc, it -> acc + solveDigit(iteration, it) }
+    }
+
+    private fun solveDigit(iteration: Int, outputElement: Int): Int {
+        if (iteration == 0) {
+            return initialPattern[outputElement - 1]
+        }
+
+        if (outputElement == lastOutputElement) {
+            return finalDigit
+        }
+
+        val iterationItem = iterations.getOrPut(iteration) { emptyArray() }
+        val cacheIndex = outputElement - firstOutputElement
+        val knownValue = iterationItem[cacheIndex]
+
+        if (knownValue != null) {
+            return knownValue
+        }
+
+        val solution = when {
+            //Solution by adding only digits after itself
+            outputElement > lastOutputElement / 3 -> sumDigits(
+                iteration - 1,
+                outputElement until min(lastOutputElement + 1, outputElement * 2)
+            )
+            else -> {
+                val ranges = (outputElement..lastOutputElement).chunked(outputElement)
+
+                ranges.foldIndexed(0) { index, acc, value ->
+                    val patternValue = basePattern[(index + 1) % 4]
+                    if (patternValue == 0) {
+                        acc
+                    } else {
+                        acc + sumDigits(iteration - 1, value) * patternValue
+                    }
+                }
+            }
+        }
+        val solutionDigit = abs(solution) % 10
+        iterationItem[cacheIndex] = solutionDigit
+        return solutionDigit
+    }
+
+    private fun emptyArray(): Array<Int?> {
+        return Array(lastOutputElement - firstOutputElement) { null }
+    }
 }
-
-
