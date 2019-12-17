@@ -16,11 +16,33 @@ class Day17KtTest {
         ..#####...^..
     """.trimIndent()
 
+    val sampleB = """
+        #######...#####
+        #.....#...#...#
+        #.....#...#...#
+        ......#...#...#
+        ......#...###.#
+        ......#.....#.#
+        ^########...#.#
+        ......#.#...#.#
+        ......#########
+        ........#...#..
+        ....#########..
+        ....#...#......
+        ....#...#......
+        ....#...#......
+        ....#####......
+    """.trimIndent()
+
+    val sampleB_FullPath = "R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2"
+
     @Test
     fun samples() {
-        val intersections = findIntersections(sampleA.split("\n").map { it.toCharArray().toList() })
+        val intersections = findIntersections(sampleA.toMap())
         assertEquals(76, sumIntersections(intersections))
     }
+
+    private fun String.toMap() = split("\n").map { it.toCharArray().toList() }
 
     @Test
     fun solveA() {
@@ -30,5 +52,25 @@ class Day17KtTest {
         println("Day 17A $solveA")
 
         assertEquals(12512, solveA)
+    }
+
+    @Test
+    fun samplesB() {
+        val path = commandList(sampleB.toMap())
+        val commandString = compressCommands(path)
+        assertEquals(sampleB_FullPath, commandString)
+
+        val functions = findFunctions(path)
+        println("Sample 17B:\n$functions")
+
+        println(verify(path, functions.a, functions.b, functions.c)?.joinToString(separator = ","))
+    }
+
+    @Test
+    fun solveB() {
+        val inputs = readInput(17).readText().trim().split(",").map(String::toLong)
+        val solveB = solveB(inputs)
+
+        println("Day 17B $solveB")
     }
 }

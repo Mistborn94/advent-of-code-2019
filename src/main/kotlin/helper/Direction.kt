@@ -2,7 +2,7 @@ package helper
 
 enum class Direction(val point: Point) {
 
-    UP(Point(0, 1)) {
+    UP(Point(0, -1)) {
         override val right: Direction
             get() = RIGHT
         override val left: Direction
@@ -14,7 +14,7 @@ enum class Direction(val point: Point) {
         override val left: Direction
             get() = UP
     },
-    DOWN(Point(0, -1)) {
+    DOWN(Point(0, 1)) {
         override val right: Direction
             get() = LEFT
         override val left: Direction
@@ -29,10 +29,4 @@ enum class Direction(val point: Point) {
 
     abstract val right: Direction
     abstract val left: Direction
-
-    companion object {
-        fun fromPoint(point: Point): Direction {
-            return values().first { it.point == point }
-        }
-    }
 }

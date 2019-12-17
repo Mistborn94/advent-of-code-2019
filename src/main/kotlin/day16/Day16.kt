@@ -37,7 +37,6 @@ private fun calculatePhase(currentSignal: List<Int>): List<Int> {
 
 fun solveB(pattern: String, iterations: Int = 100, repeat: Int): String {
     val patternNumbers = pattern.toCharArray().map { it.toString().toInt() }
-    //Number of beginning digits to skip
     val solutionOffset = pattern.substring(0, 7).toInt()
     val finalDigit = patternNumbers[patternNumbers.lastIndex]
     val totalPatternSize = patternNumbers.size * repeat
