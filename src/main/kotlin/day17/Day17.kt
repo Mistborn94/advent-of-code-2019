@@ -3,7 +3,7 @@ package day17
 import day5.IntCode
 import helper.Direction
 import helper.Point
-import java.util.concurrent.BlockingQueue
+import helper.drainToList
 import kotlin.math.max
 
 fun solveA(program: List<Long>): Int {
@@ -283,12 +283,6 @@ fun findIntersections(lines: List<List<Char>>): MutableList<Point> {
         }
     }
     return intersections
-}
-
-private fun BlockingQueue<Long>.drainToList(): List<Long> {
-    val outputList = mutableListOf<Long>()
-    drainTo(outputList)
-    return outputList
 }
 
 fun <T> inRange(list: List<List<T>>, point: Point): Boolean = point.y in list.indices && point.x in list[0].indices

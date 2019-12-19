@@ -2,6 +2,7 @@ package day18
 
 import helper.readInput
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 
 class Day18KtTest {
@@ -59,6 +60,7 @@ class Day18KtTest {
     }
 
     @Test
+    @Ignore("Also waaaaaaay too slow")
     fun solveA() {
         val solveA = solveA(readInput(18).readText().trim().toMap())
 

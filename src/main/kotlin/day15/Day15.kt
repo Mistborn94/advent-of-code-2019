@@ -4,6 +4,7 @@ import day5.IntCode
 import helper.Direction
 import helper.Point
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
 
 enum class Cell(val char: String) {
     SPACE("."),
@@ -56,7 +57,7 @@ class Droid(val initialIntCodeProgram: List<Long>) {
         nextPositions.forEach { (nextPosition, nextDirection) ->
             val command = directionCommands.getValue(nextDirection)
             val newPath = currentPath + listOf(command.toLong())
-            val intCode = IntCode.ofLongs(initialIntCodeProgram, newPath)
+            val intCode = IntCode(initialIntCodeProgram, LinkedBlockingQueue(newPath))
             intCode.runUtilInput()
             val last = intCode.outputs.drainToList().last()
             val cellType = resultCodes.getValue(last.toInt())

@@ -1,6 +1,7 @@
 package helper
 
 import java.util.*
+import java.util.concurrent.BlockingQueue
 
 fun <T> ArrayList<T>.resize(minimumSize: Int, supplier: () -> T) {
     if (minimumSize < 0) {
@@ -30,4 +31,10 @@ data class Point(val x: Int, val y: Int) {
         Point(x, y + 1),
         Point(x, y - 1)
     )
+}
+
+fun BlockingQueue<Long>.drainToList(): List<Long> {
+    val outputList = mutableListOf<Long>()
+    drainTo(outputList)
+    return outputList
 }
