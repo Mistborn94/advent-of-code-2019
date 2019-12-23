@@ -108,7 +108,7 @@ class TritonMap private constructor(
     }
 
     fun solveB(): Int {
-        TODO("Not implemented")
+        TODO("Not implemented. This needs some thought")
         //4 Robots
         //Sharing a keyset
         //Separate / Shared seen steps
