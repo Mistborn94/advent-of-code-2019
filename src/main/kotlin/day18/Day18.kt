@@ -25,13 +25,13 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
         val startingPositions = keysAndDoors + entryPositions
 
         startingPositions.forEach { point ->
-            distancesMap[point] = findDistancesToOthers(point)
+            distancesMap[point] = findDistancesToOtherDoorsAndKeys(point)
         }
 
         return distancesMap
     }
 
-    private fun findDistancesToOthers(startingPoint: Point): List<Pair<Point, Int>> {
+    private fun findDistancesToOtherDoorsAndKeys(startingPoint: Point): List<Pair<Point, Int>> {
         val nodesToTraverse = mutableListOf(startingPoint)
         val seenPoints = mutableMapOf(startingPoint to 0)
         val relevantNodes = mutableListOf<Pair<Point, Int>>()
@@ -58,7 +58,7 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
     fun solveA(): Int {
         val firstStep = Step(entryPositions.first(), emptySet())
         val seenSteps = mutableMapOf(firstStep to 0)
-        val nodesToVisit = sortedSetOf(pathComparator(seenSteps), Path(firstStep, emptySet()))
+        val nodesToVisit = sortedSetOf(pathComparatorA(seenSteps), Path(firstStep, emptySet()))
 
         while (!nodesToVisit.first().hasAllKeys()) {
             val pathNode = nodesToVisit.pollFirst()!!
@@ -103,12 +103,33 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
         }
     }
 
+    fun solveB(): Int {
+        //4 Robots
+        //Sharing a keyset
+        //Separate /Shared seen steps
+        val firstSteps = entryPositions.map { Step(it, emptySet()) }.toList()
+        val seenStepDistances = firstSteps.map { it to 0 }.toMap().toMutableMap()
+        val nodesToVisit = firstSteps.mapIndexed { i, firstStep ->
+            i to sortedSetOf(pathComparatorA(seenStepDistances), Path(firstStep, emptySet()))
+        }.toMap()
+
+        val nonReadyPaths = (0 until 4).map { it to mutableSetOf<Path>() }
+
+        while (totalNextKeys(nodesToVisit) != allKeys) {
+
+        }
+
+        return totalNextKeys(nodesToVisit)
+
+        TODO("Implement")
+    }
+
     private fun Point.isKey() = map[this] in 'a'..'z'
     private fun Point.isDoor() = map[this] in 'A'..'Z'
 
     private fun Path.hasAllKeys(): Boolean = this.finalStep.hasAllKeys(allKeys.size)
 
-    private fun pathComparator(seenSteps: Map<Step, Int>): Comparator<Path> {
+    private fun pathComparatorA(seenSteps: Map<Step, Int>): Comparator<Path> {
         return compareBy<Path> { it.length(seenSteps) }
             .thenByDescending { it.finalStep.keyCount }
             .thenBy { it.hashCode() }
@@ -141,6 +162,10 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
     }
 }
 
+private fun Step.isReady(ownedKeys: Set<Char>): Boolean {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+}
+
 data class Path(val finalStep: Step, val path: Set<Step>) {
     override fun toString(): String {
         return "Path(finalStep=${finalStep.point}, keys=${finalStep.keys})"
@@ -152,11 +177,4 @@ data class Path(val finalStep: Step, val path: Set<Step>) {
 data class Step(val point: Point, val keys: Set<Char>) {
     val keyCount = keys.size
     fun hasAllKeys(expectedCount: Int) = keyCount == expectedCount
-}
-
-fun solveB(): Int {
-    //4 Robots
-    //Sharing a keyset
-    //Separate /Shared seen steps
-    TODO("Implement")
 }

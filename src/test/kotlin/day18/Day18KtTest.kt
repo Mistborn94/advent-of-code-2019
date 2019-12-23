@@ -60,7 +60,7 @@ class Day18KtTest {
     """.trimIndent()
 
     @Test
-    fun testSamples() {
+    fun testSamplesA() {
         assertEquals(8, solveA(sample8.toMap()))
         assertEquals(10, solveA(sample10.toMap()))
         assertEquals(86, solveA(sample86.toMap()))
