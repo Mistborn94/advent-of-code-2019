@@ -10,7 +10,11 @@ fun solveA(map: List<List<Char>>): Int {
     return TritonMap.buildForA(map).solveA()
 }
 
-class TritonMap private constructor(val map: List<List<Char>>, val entryPositions: Set<Point>) {
+class TritonMap private constructor(
+    val map: List<List<Char>>,
+    val entryPositions: List<Point>,
+    val originalEntry: Point
+) {
     val allKeys = map.flatMap { line -> line.filter { it in 'a'..'z' } }.toSet()
 
     val keysAndDoors = map.indices.flatMap { y ->
@@ -58,7 +62,7 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
     fun solveA(): Int {
         val firstStep = Step(entryPositions.first(), emptySet())
         val seenSteps = mutableMapOf(firstStep to 0)
-        val nodesToVisit = sortedSetOf(pathComparatorA(seenSteps), Path(firstStep, emptySet()))
+        val nodesToVisit = sortedSetOf(pathComparator(seenSteps), Path(firstStep, emptySet()))
 
         while (!nodesToVisit.first().hasAllKeys()) {
             val pathNode = nodesToVisit.pollFirst()!!
@@ -104,24 +108,60 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
     }
 
     fun solveB(): Int {
+        TODO("Not implemented")
         //4 Robots
         //Sharing a keyset
-        //Separate /Shared seen steps
+        //Separate / Shared seen steps
         val firstSteps = entryPositions.map { Step(it, emptySet()) }.toList()
         val seenStepDistances = firstSteps.map { it to 0 }.toMap().toMutableMap()
+
         val nodesToVisit = firstSteps.mapIndexed { i, firstStep ->
-            i to sortedSetOf(pathComparatorA(seenStepDistances), Path(firstStep, emptySet()))
+            entryPositions[i] to sortedSetOf(pathComparator(seenStepDistances), Path(firstStep, emptySet()))
         }.toMap()
 
-        val nonReadyPaths = (0 until 4).map { it to mutableSetOf<Path>() }
+        val finalNodes = mutableMapOf<Int, Path>()
+        val keyCountByQuadrant = countQuadrantKeys()
 
-        while (totalNextKeys(nodesToVisit) != allKeys) {
+        val lockedDoorDistances = mutableMapOf<Step, Int>()
+        val lockedDoors = entryPositions.map { it to mutableSetOf<Path>() }.toMap()
 
+        while (totalNextKeys(seenStepDistances, nodesToVisit.values) != allKeys) {
+            val noLockedDoors =
+                entryPositions.firstOrNull { lockedDoors[it].isNullOrEmpty() && !(nodesToVisit[it].isNullOrEmpty()) }
+
+            if (noLockedDoors != null) {
+
+            } else {
+
+            }
         }
 
-        return totalNextKeys(nodesToVisit)
+        return totalPathLength(seenStepDistances, finalNodes.values)
+    }
 
-        TODO("Implement")
+    private fun countQuadrantKeys(): Map<Point, Int> {
+        val counts = mutableMapOf<Point, Int>().withDefault { 0 }
+
+        map.forEachIndexed { y, row ->
+            row.forEachIndexed { x, cell ->
+                if (cell in 'a'..'z') {
+                    val xComponent = if (x < originalEntry.x) -1 else 1
+                    val yComponent = if (y < originalEntry.y) -1 else 1
+                    val quadrant = Point(xComponent, yComponent)
+                    counts[quadrant] = counts.getValue(quadrant) + 1
+                }
+            }
+        }
+
+        return counts
+    }
+
+    private fun totalPathLength(seenSteps: Map<Step, Int>, paths: Collection<Path>): Int {
+        return paths.sumBy { it.length(seenSteps) }
+    }
+
+    private fun totalNextKeys(stepDistances: Map<Step, Int>, values: Collection<TreeSet<Path>>): Any {
+        return values.map { it.first().length(stepDistances) }
     }
 
     private fun Point.isKey() = map[this] in 'a'..'z'
@@ -129,24 +169,28 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
 
     private fun Path.hasAllKeys(): Boolean = this.finalStep.hasAllKeys(allKeys.size)
 
-    private fun pathComparatorA(seenSteps: Map<Step, Int>): Comparator<Path> {
+    private fun pathComparator(seenSteps: Map<Step, Int>): Comparator<Path> {
         return compareBy<Path> { it.length(seenSteps) }
             .thenByDescending { it.finalStep.keyCount }
             .thenBy { it.hashCode() }
     }
 
     companion object {
-        fun buildForA(map: List<List<Char>>): TritonMap = TritonMap(map, setOf(map.indexOf('@')))
+        fun buildForA(map: List<List<Char>>): TritonMap {
+            val entryPosition = map.indexOf('@')
+            return TritonMap(map, listOf(entryPosition), entryPosition)
+        }
+
         fun buildForB(map: List<List<Char>>): TritonMap {
             val originalStart = map.indexOf('@')
             val mutableMap = map.map { it.toMutableList() }.toMutableList()
-            val newStarts = setOf(
+            val newStarts = listOf(
                 originalStart + Point(1, 1),
                 originalStart + Point(1, -1),
-                originalStart + Point(-1, 1),
-                originalStart + Point(-1, -1)
+                originalStart + Point(-1, -1),
+                originalStart + Point(-1, 1)
             )
-            val newWalls = setOf(
+            val newWalls = listOf(
                 originalStart,
                 originalStart + Point(0, 1),
                 originalStart + Point(0, -1),
@@ -157,13 +201,13 @@ class TritonMap private constructor(val map: List<List<Char>>, val entryPosition
             newStarts.forEach { mutableMap[it] = '@' }
             newWalls.forEach { mutableMap[it] = '#' }
 
-            return TritonMap(mutableMap, newWalls)
+            return TritonMap(mutableMap, newStarts, originalStart)
         }
     }
-}
 
-private fun Step.isReady(ownedKeys: Set<Char>): Boolean {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private fun Step.isReady(ownedKeys: Set<Char>): Boolean {
+        return !this.point.isDoor() || map[this.point].toLowerCase() in ownedKeys
+    }
 }
 
 data class Path(val finalStep: Step, val path: Set<Step>) {
