@@ -47,16 +47,35 @@ class Day22KtTest {
     }
 
     @Test
+    fun samplesB() {
+//        var stack = CardStack(10)
+//        println(stack.cards)
+//        repeat(10) {
+//            stack = stack.runIteration(sample2.lines())
+//            println(stack.cards)
+//        }
+
+        assertEquals(6, solveB(sample1.lines(), 10, 8, 1))
+        assertEquals(2, solveB(sample1.lines(), 10, 8, 2))
+        assertEquals(4, solveB(sample1.lines(), 10, 8, 3))
+        assertEquals(8, solveB(sample1.lines(), 10, 8, 4))
+
+        assertEquals(5, solveB(sample2.lines(), 10, 8, 1))
+        assertEquals(3, solveB(sample3.lines(), 10, 7, 1))
+        assertEquals(6, solveB(sample4.lines(), 10, 7, 1))
+    }
+
+    @Test
     fun solveA() {
         val solveA = solveA(readInput(22).readLines()).cards.indexOf(2019)
-        print("Day 22A $solveA")
+        println("Day 22A $solveA")
         assertTrue(solveA > 2889)
     }
 
     @Test
     fun solveB() {
-        val solveA = solveB(readInput(22).readLines(), 101741582076661L).cards.indexOf(2019)
-        print("Day 22A $solveA")
-        assertTrue(solveA > 2889)
+        val solveB = solveB(readInput(22).readLines(), 119_315_717_514_047, 2020, 101_741_582_076_661)
+        println("Day 22B $solveB")
+        assertTrue(solveB > 25_035_251_100_630)
     }
 }
