@@ -4,7 +4,7 @@ import helper.readInput
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class Day20KtTest {
+class PlutoTest {
     val sample1 = """
                  A           
                  A           
@@ -69,13 +69,13 @@ class Day20KtTest {
 
     @Test
     fun samples() {
-        assertEquals(23, solveA(sample1.lines()))
-        assertEquals(58, solveA(sample2.lines()))
+        assertEquals(23, Pluto(sample1.lines()).solveA())
+        assertEquals(58, Pluto(sample2.lines()).solveA())
     }
 
     @Test
     fun solveA() {
-        val solveA = solveA(readInput(20).readLines())
+        val solveA = Pluto(readInput(20).readLines()).solveA()
         println("Day 20A $solveA")
     }
 }

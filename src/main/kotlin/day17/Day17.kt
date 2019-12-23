@@ -40,8 +40,6 @@ data class Functions(
     val a: Function,
     val b: Function,
     val c: Function
-
-
 ) {
     override fun toString(): String {
         return "${final.joinToString(separator = ",")}\n" +
@@ -187,7 +185,7 @@ fun verify(commands: List<Command>, a: Function, b: Function, c: Function, depth
 }
 
 private fun <E> List<E>.startsWith(other: List<E>): Boolean {
-    return size >= other.size && other.indices.all { this[it] == other[it] }
+    return other.isNotEmpty() && size >= other.size && other.indices.all { this[it] == other[it] }
 }
 
 val directions = mapOf(

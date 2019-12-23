@@ -1,6 +1,7 @@
 package day17
 
 import helper.readInput
+import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
