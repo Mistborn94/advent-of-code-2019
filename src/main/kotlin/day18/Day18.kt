@@ -18,8 +18,7 @@ class Map(val map: List<List<Char>>) {
 
     fun traverse(): Int {
         val firstStep = Step(startingPosition, emptySet())
-        val seenSteps = mutableSetOf<Step>(firstStep)
-//        val paths = mutableMapOf(firstStep to emptySet<Step>())
+        val seenSteps = mutableSetOf(firstStep)
         val nodesToVisit = linkedSetOf(Path(firstStep, emptySet()))
 
         var node = nodesToVisit.first()

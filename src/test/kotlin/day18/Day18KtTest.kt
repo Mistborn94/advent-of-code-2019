@@ -63,6 +63,7 @@ class Day18KtTest {
     @Ignore("Also waaaaaaay too slow")
     fun solveA() {
         val solveA = solveA(readInput(18).readText().trim().toMap())
+        assertEquals(606, solveA)
 
         println("Day 18 A $solveA")
     }
