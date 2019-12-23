@@ -2,12 +2,23 @@ package day20
 
 import helper.Point
 
-enum class Mode {
-    INNER,
-    OUTER
+enum class Mode(val layerDelta: Int) {
+    INNER(-1),
+    OUTER(+1);
 }
 
-data class Portal(val name: String, val mode: Mode, val position: Point)
+data class Portal(val name: String, val mode: Mode, val position: Point) {
+
+    fun isWall(layer: Int) = mode == Mode.OUTER && layer == 0
+}
+
+data class RecursivePosition(val position: Point, val layer: Int) {
+    val neighbours: List<RecursivePosition> by lazy {
+        position.neighbours().map {
+            RecursivePosition(it, layer)
+        }
+    }
+}
 
 class Pluto(val map: List<String>) {
 
@@ -68,21 +79,20 @@ class Pluto(val map: List<String>) {
         val visitedNodes = mutableMapOf(startingPoint to 0)
 
         while (visitedNodes[endingPoint] == null) {
-            val currentNode = nodesToTraverse.first()
-            nodesToTraverse.remove(currentNode)
-            val currentDistance = visitedNodes.getValue(currentNode)
+            val currentPosition = nodesToTraverse.first()
+            nodesToTraverse.remove(currentPosition)
+            val currentDistance = visitedNodes.getValue(currentPosition)
 
-            currentNode.neighbours().forEach {
+            currentPosition.neighbours().forEach {
                 if (map[it] == '.' && it !in visitedNodes) {
                     visitedNodes[it] = currentDistance + 1
                     nodesToTraverse.add(it)
                 }
             }
 
-            val currentPortal = portalsByPosition[currentNode]
-            val currentLabel = currentPortal?.name
-            if (currentLabel != null && currentLabel !in setOf("AA", "ZZ")) {
-                val teleportTo = portalsByName.getValue(currentLabel).first { it.position != currentNode }.position
+            val currentPortal = portalsByPosition[currentPosition]
+            if (currentPortal != null && currentPortal.name !in setOf("AA", "ZZ")) {
+                val teleportTo = findMatchingPortal(currentPortal).position
                 if (teleportTo !in visitedNodes) {
                     visitedNodes[teleportTo] = currentDistance + 1
                     nodesToTraverse.add(teleportTo)
@@ -92,6 +102,43 @@ class Pluto(val map: List<String>) {
 
         return visitedNodes.getValue(endingPoint)
     }
+
+    fun solveB(): Int {
+        val startingPoint = RecursivePosition(portalsByName.getValue("AA")[0].position, 0)
+        val endingPoint = RecursivePosition(portalsByName.getValue("ZZ")[0].position, 0)
+
+        val nodesToTraverse = linkedSetOf(startingPoint)
+        val visitedNodes = mutableMapOf(startingPoint to 0)
+
+        while (visitedNodes[endingPoint] == null) {
+            val currentPosition = nodesToTraverse.first()
+            nodesToTraverse.remove(currentPosition)
+
+            val currentDistance = visitedNodes.getValue(currentPosition)
+
+            currentPosition.neighbours.forEach {
+                if (map[it.position] == '.' && it !in visitedNodes) {
+                    visitedNodes[it] = currentDistance + 1
+                    nodesToTraverse.add(it)
+                }
+            }
+
+            val currentPortal = portalsByPosition[currentPosition.position]
+            if (currentPortal != null && currentPortal.name !in setOf("AA", "ZZ") && !currentPortal.isWall(currentPosition.layer)) {
+                val teleportTo = RecursivePosition(findMatchingPortal(currentPortal).position, currentPosition.layer + currentPortal.mode.layerDelta)
+
+                if (teleportTo !in visitedNodes) {
+                    visitedNodes[teleportTo] = currentDistance + 1
+                    nodesToTraverse.add(teleportTo)
+                }
+            }
+        }
+
+        return visitedNodes.getValue(endingPoint)
+    }
+
+    private fun findMatchingPortal(currentPortal: Portal) =
+        portalsByName.getValue(currentPortal.name).first { it.position != currentPortal.position }
 
     private fun findDonutSize(sequence: CharSequence): Int {
         val subSequence = sequence.substring(2, sequence.length - 2)
