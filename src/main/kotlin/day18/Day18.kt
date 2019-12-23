@@ -3,59 +3,101 @@ package day18
 import helper.Point
 
 fun solveA(map: List<List<Char>>): Int {
-    val map = Map(map)
-    return map.traverse()
+    return TritonMap(map).traverse()
 }
 
-class Map(val map: List<List<Char>>) {
+class TritonMap(val map: List<List<Char>>) {
     val allKeys = map.flatMap { line -> line.filter { it in 'a'..'z' } }.toSet()
-    val startingPosition: Point
+    val allDoors = map.flatMap { line -> line.filter { it in 'A'..'Z' } }.toSet()
 
-    init {
-        val startingY = map.indexOfFirst { it.contains('@') }
-        startingPosition = Point(map[startingY].indexOf('@'), startingY)
+    val entryPosition: Point = indexOf('@')
+    val keysAndDoors = map.indices.flatMap { y ->
+        map[y].indices.map { x -> Point(x, y) }.filter { it.isDoor() || it.isKey() }
+    }
+
+    val distanceGraph = buildDistanceGraph()
+
+    private fun buildDistanceGraph(): Map<Point, List<Pair<Point, Int>>> {
+        //Map of node to neighbouring nodes + distance
+        val distancesMap = mutableMapOf<Point, List<Pair<Point, Int>>>()
+        val startingPositions = keysAndDoors + entryPosition
+
+        startingPositions.forEach { point ->
+            distancesMap[point] = findDistancesToOthers(point)
+        }
+
+        return distancesMap
+    }
+
+    private fun findDistancesToOthers(startingPoint: Point): List<Pair<Point, Int>> {
+        val nodesToTraverse = mutableListOf(startingPoint)
+        val seenPoints = mutableMapOf(startingPoint to 0)
+        val relevantNodes = mutableListOf<Pair<Point, Int>>()
+
+        while (nodesToTraverse.isNotEmpty()) {
+            val currentPoint = nodesToTraverse.removeAt(0)
+            val currentDistance = seenPoints.getValue(currentPoint)
+            if (currentPoint != startingPoint && (currentPoint.isDoor() || currentPoint.isKey())) {
+                relevantNodes.add(currentPoint to currentDistance)
+            } else {
+                currentPoint.neighbours().forEach { neighbourPoint ->
+                    val cell = map[neighbourPoint]
+                    if (cell != '#' && neighbourPoint !in seenPoints) {
+                        seenPoints[neighbourPoint] = currentDistance + 1
+                        nodesToTraverse.add(neighbourPoint)
+                    }
+                }
+            }
+        }
+
+        return relevantNodes
+    }
+
+    private fun indexOf(char: Char): Point {
+        val startingY = map.indexOfFirst { it.contains(char) }
+        return Point(map[startingY].indexOf(char), startingY)
     }
 
     fun traverse(): Int {
-        val firstStep = Step(startingPosition, emptySet())
+        val mappedDistanceGraph = distanceGraph.mapKeys { (key, _) -> map[key] }
+            .mapValues { (_, values) -> values.map { (point, distance) -> map[point] } }
+        val firstStep = Step(entryPosition, emptySet())
         val seenSteps = mutableSetOf(firstStep)
-        val nodesToVisit = linkedSetOf(Path(firstStep, emptySet()))
+        val nodesToVisit = mutableSetOf(Path(firstStep, emptySet(), 0))
 
-        var node = nodesToVisit.first()
-        while (!node.finalStep.hasAllKeys(allKeys.size)) {
-            nodesToVisit.remove(node)
-            val currentStep = node.finalStep
+        var pathNode = nodesToVisit.minBy { it.length }!!
+        while (!pathNode.finalStep.hasAllKeys(allKeys.size)) {
+            nodesToVisit.remove(pathNode)
+            val currentStep = pathNode.finalStep
             val currentKeys = currentStep.keys
-            val currentPath = node.path
+            val currentPath = pathNode.path
 
-            currentStep.point.neighbours().forEach { point ->
+            distanceGraph.getValue(currentStep.point).forEach { (point, distance) ->
+                val newDistance = pathNode.length + distance
                 if (point.y in map.indices && point.x in map[0].indices) {
                     val cell = map[point]
-                    val isKey = cell in 'a'..'z'
-                    val isLockedDoor = cell in 'A'..'Z' && cell.toLowerCase() !in currentKeys
-                    if (cell != '#' && !isLockedDoor) {
-                        if (isKey && cell !in currentKeys) {
-                            val nextKeys = currentKeys + cell
-                            val nextStep = Step(point, nextKeys)
-                            if (nextStep !in currentPath && nextStep !in seenSteps) {
-                                val newPath = currentPath + nextStep
-                                seenSteps.add(nextStep)
-                                nodesToVisit.add(Path(nextStep, newPath))
-                            }
-                        } else {
-                            val nextStep = Step(point, currentKeys)
-                            if (nextStep !in currentPath && nextStep !in seenSteps) {
-                                val newPath = currentPath + nextStep
-                                seenSteps.add(nextStep)
-                                nodesToVisit.add(Path(nextStep, newPath))
-                            }
+
+                    if (point.isKey()) {
+                        val nextKeys = currentKeys + cell
+                        val nextStep = Step(point, nextKeys)
+                        if (nextStep !in currentPath && nextStep !in seenSteps) {
+                            val newPath = currentPath + nextStep
+                            seenSteps.add(nextStep)
+                            nodesToVisit.add(Path(nextStep, newPath, newDistance))
+                        }
+                    } else if (cell.toLowerCase() in currentKeys) {
+                        val nextStep = Step(point, currentKeys)
+                        if (nextStep !in currentPath && nextStep !in seenSteps) {
+                            val newPath = currentPath + nextStep
+                            seenSteps.add(nextStep)
+                            nodesToVisit.add(Path(nextStep, newPath, newDistance))
                         }
                     }
                 }
             }
-            node = nodesToVisit.first()
+            pathNode = nodesToVisit.minBy { it.length }!!
         }
-        return node.length
+        return pathNode.length
     }
 
     data class Step(val point: Point, val keys: Set<Char>) {
@@ -63,9 +105,10 @@ class Map(val map: List<List<Char>>) {
         fun hasAllKeys(expectedCount: Int) = keyCount == expectedCount
     }
 
-    data class Path(val finalStep: Step, val path: Set<Step>) {
-        val length = path.size
-    }
+    data class Path(val finalStep: Step, val path: Set<Step>, val length: Int)
+
+    private fun Point.isKey() = map[this] in 'a'..'z'
+    private fun Point.isDoor() = map[this] in 'A'..'Z'
 }
 
 private operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
