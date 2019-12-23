@@ -33,8 +33,18 @@ data class Point(val x: Int, val y: Int) {
     )
 }
 
-fun BlockingQueue<Long>.drainToList(): List<Long> {
-    val outputList = mutableListOf<Long>()
+fun <T> BlockingQueue<T>.drainToList(): List<T> {
+    val outputList = mutableListOf<T>()
     drainTo(outputList)
     return outputList
+}
+
+fun <T> List<List<T>>.indexOf(char: T): Point {
+    val startingY = this.indexOfFirst { it.contains(char) }
+    return Point(this[startingY].indexOf(char), startingY)
+}
+
+operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
+operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
+    this[point.y][point.x] = value
 }

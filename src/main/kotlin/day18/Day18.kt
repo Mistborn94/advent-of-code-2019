@@ -1,16 +1,18 @@
 package day18
 
 import helper.Point
+import helper.get
+import helper.indexOf
+import helper.set
+import java.util.*
 
 fun solveA(map: List<List<Char>>): Int {
-    return TritonMap(map).traverse()
+    return TritonMap.buildForA(map).solveA()
 }
 
-class TritonMap(val map: List<List<Char>>) {
+class TritonMap private constructor(val map: List<List<Char>>, val entryPositions: Set<Point>) {
     val allKeys = map.flatMap { line -> line.filter { it in 'a'..'z' } }.toSet()
-    val allDoors = map.flatMap { line -> line.filter { it in 'A'..'Z' } }.toSet()
 
-    val entryPosition: Point = indexOf('@')
     val keysAndDoors = map.indices.flatMap { y ->
         map[y].indices.map { x -> Point(x, y) }.filter { it.isDoor() || it.isKey() }
     }
@@ -20,7 +22,7 @@ class TritonMap(val map: List<List<Char>>) {
     private fun buildDistanceGraph(): Map<Point, List<Pair<Point, Int>>> {
         //Map of node to neighbouring nodes + distance
         val distancesMap = mutableMapOf<Point, List<Pair<Point, Int>>>()
-        val startingPositions = keysAndDoors + entryPosition
+        val startingPositions = keysAndDoors + entryPositions
 
         startingPositions.forEach { point ->
             distancesMap[point] = findDistancesToOthers(point)
@@ -53,62 +55,108 @@ class TritonMap(val map: List<List<Char>>) {
         return relevantNodes
     }
 
-    private fun indexOf(char: Char): Point {
-        val startingY = map.indexOfFirst { it.contains(char) }
-        return Point(map[startingY].indexOf(char), startingY)
-    }
+    fun solveA(): Int {
+        val firstStep = Step(entryPositions.first(), emptySet())
+        val seenSteps = mutableMapOf(firstStep to 0)
+        val nodesToVisit = sortedSetOf(pathComparator(seenSteps), Path(firstStep, emptySet()))
 
-    fun traverse(): Int {
-        val mappedDistanceGraph = distanceGraph.mapKeys { (key, _) -> map[key] }
-            .mapValues { (_, values) -> values.map { (point, distance) -> map[point] } }
-        val firstStep = Step(entryPosition, emptySet())
-        val seenSteps = mutableSetOf(firstStep)
-        val nodesToVisit = mutableSetOf(Path(firstStep, emptySet(), 0))
-
-        var pathNode = nodesToVisit.minBy { it.length }!!
-        while (!pathNode.finalStep.hasAllKeys(allKeys.size)) {
-            nodesToVisit.remove(pathNode)
+        while (!nodesToVisit.first().hasAllKeys()) {
+            val pathNode = nodesToVisit.pollFirst()!!
             val currentStep = pathNode.finalStep
             val currentKeys = currentStep.keys
             val currentPath = pathNode.path
+            val currentDistance = seenSteps.getValue(currentStep)
 
             distanceGraph.getValue(currentStep.point).forEach { (point, distance) ->
-                val newDistance = pathNode.length + distance
+                val newDistance = currentDistance + distance
                 if (point.y in map.indices && point.x in map[0].indices) {
                     val cell = map[point]
-
                     if (point.isKey()) {
-                        val nextKeys = currentKeys + cell
-                        val nextStep = Step(point, nextKeys)
-                        if (nextStep !in currentPath && nextStep !in seenSteps) {
-                            val newPath = currentPath + nextStep
-                            seenSteps.add(nextStep)
-                            nodesToVisit.add(Path(nextStep, newPath, newDistance))
-                        }
+                        val nextStep = Step(point, currentKeys + cell)
+                        visit(seenSteps, currentPath, nodesToVisit, nextStep, newDistance)
                     } else if (cell.toLowerCase() in currentKeys) {
                         val nextStep = Step(point, currentKeys)
-                        if (nextStep !in currentPath && nextStep !in seenSteps) {
-                            val newPath = currentPath + nextStep
-                            seenSteps.add(nextStep)
-                            nodesToVisit.add(Path(nextStep, newPath, newDistance))
-                        }
+                        visit(seenSteps, currentPath, nodesToVisit, nextStep, newDistance)
                     }
                 }
             }
-            pathNode = nodesToVisit.minBy { it.length }!!
         }
-        return pathNode.length
+
+        val target = nodesToVisit.first()
+        return seenSteps.getValue(target.finalStep)
     }
 
-    data class Step(val point: Point, val keys: Set<Char>) {
-        val keyCount = keys.size
-        fun hasAllKeys(expectedCount: Int) = keyCount == expectedCount
+    private fun visit(
+        seenSteps: MutableMap<Step, Int>,
+        currentPath: Set<Step>,
+        nodesToVisit: TreeSet<Path>,
+        nextStep: Step,
+        newDistance: Int
+    ) {
+        if (nextStep in seenSteps) {
+            val bestDistance = seenSteps.getValue(nextStep)
+            seenSteps[nextStep] = minOf(bestDistance, newDistance)
+        } else if (nextStep !in currentPath) {
+            val newPath = currentPath + nextStep
+            seenSteps[nextStep] = newDistance
+            nodesToVisit.add(Path(nextStep, newPath))
+        }
     }
-
-    data class Path(val finalStep: Step, val path: Set<Step>, val length: Int)
 
     private fun Point.isKey() = map[this] in 'a'..'z'
     private fun Point.isDoor() = map[this] in 'A'..'Z'
+
+    private fun Path.hasAllKeys(): Boolean = this.finalStep.hasAllKeys(allKeys.size)
+
+    private fun pathComparator(seenSteps: Map<Step, Int>): Comparator<Path> {
+        return compareBy<Path> { it.length(seenSteps) }
+            .thenByDescending { it.finalStep.keyCount }
+            .thenBy { it.hashCode() }
+    }
+
+    companion object {
+        fun buildForA(map: List<List<Char>>): TritonMap = TritonMap(map, setOf(map.indexOf('@')))
+        fun buildForB(map: List<List<Char>>): TritonMap {
+            val originalStart = map.indexOf('@')
+            val mutableMap = map.map { it.toMutableList() }.toMutableList()
+            val newStarts = setOf(
+                originalStart + Point(1, 1),
+                originalStart + Point(1, -1),
+                originalStart + Point(-1, 1),
+                originalStart + Point(-1, -1)
+            )
+            val newWalls = setOf(
+                originalStart,
+                originalStart + Point(0, 1),
+                originalStart + Point(0, -1),
+                originalStart + Point(1, 0),
+                originalStart + Point(-1, 0)
+            )
+
+            newStarts.forEach { mutableMap[it] = '@' }
+            newWalls.forEach { mutableMap[it] = '#' }
+
+            return TritonMap(mutableMap, newWalls)
+        }
+    }
 }
 
-private operator fun <E> List<List<E>>.get(point: Point) = this[point.y][point.x]
+data class Path(val finalStep: Step, val path: Set<Step>) {
+    override fun toString(): String {
+        return "Path(finalStep=${finalStep.point}, keys=${finalStep.keys})"
+    }
+
+    fun length(seenSteps: Map<Step, Int>) = seenSteps.getValue(this.finalStep)
+}
+
+data class Step(val point: Point, val keys: Set<Char>) {
+    val keyCount = keys.size
+    fun hasAllKeys(expectedCount: Int) = keyCount == expectedCount
+}
+
+fun solveB(): Int {
+    //4 Robots
+    //Sharing a keyset
+    //Separate /Shared seen steps
+    TODO("Implement")
+}
