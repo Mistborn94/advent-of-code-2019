@@ -93,6 +93,9 @@ class IntCode(
     var instructionPointer = 0
     var relativeBase = 0
 
+    /**
+     * Run until the program ends (OpCode 99), blocking when waiting for input
+     */
     fun runProgram() {
         instructionPointer = 0
         var instruction = memory[instructionPointer]
@@ -102,6 +105,11 @@ class IntCode(
         }
     }
 
+    /**
+     * Run until either
+     * - The program ends (OpCode 99)
+     * - Or an input is requested but the input queue is empty
+     */
     fun runUtilInput() {
         var instruction = memory[instructionPointer]
 
