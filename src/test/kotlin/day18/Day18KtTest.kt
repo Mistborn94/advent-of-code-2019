@@ -2,7 +2,6 @@ package day18
 
 import helper.readInput
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertTrue
 
@@ -59,6 +58,48 @@ class Day18KtTest {
         #################
     """.trimIndent()
 
+    val sampleB8 = """
+        ####### 
+        #a.#Cd#
+        ##...##
+        ##.@.##
+        ##...##
+        #cB#Ab#
+        #######
+    """.trimIndent()
+
+    val sampleB24 = """
+        ###############
+        #d.ABC.#.....a#
+        ######@#@######
+        ###############
+        ######@#@######
+        #b.....#.....c#
+        ###############
+    """.trimIndent()
+
+    val sampleB32 = """
+        #############
+        #DcBa.#.GhKl#
+        #.###@#@#I###
+        #e#d#####j#k#
+        ###C#@#@###J#
+        #fEbA.#.FgHi#
+        #############
+    """.trimIndent()
+
+    val sampleB72 = """
+        #############
+        #g#f.D#..h#l#
+        #F###e#E###.#
+        #dCba@#@BcIJ#
+        #############
+        #nK.L@#@G...#
+        #M###N#H###.#
+        #o#m..#i#jk.#
+        #############
+    """.trimIndent()
+
     @Test
     fun testSamplesA() {
         assertEquals(8, solveA(sample8.toMap()))
@@ -70,10 +111,25 @@ class Day18KtTest {
     }
 
     @Test
+    fun testSamplesB() {
+//        assertEquals(8, solveB(sampleB8.toMap()))
+//        assertEquals(24, solveB(sampleB24.toMap()))
+//        assertEquals(32, solveB(sampleB32.toMap()))
+        assertEquals(72, solveB(sampleB72.toMap()))
+    }
+
+    @Test
     fun solveA() {
         val solveA = solveA(readInput(18).readText().trim().toMap())
         println("Day 18 A $solveA")
         assertEquals(3048, solveA)
+    }
+
+    @Test
+    fun solveB() {
+        val solveB = solveB(readInput(18).readText().trim().toMap())
+        println("Day 18 B $solveB")
+        assertTrue(3048 > solveB)
     }
 
     private fun String.toMap() = split("\n").map { it.toCharArray().toList() }

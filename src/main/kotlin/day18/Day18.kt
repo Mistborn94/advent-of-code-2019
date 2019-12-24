@@ -10,6 +10,10 @@ fun solveA(map: List<List<Char>>): Int {
     return TritonMap.buildForA(map).solveA()
 }
 
+fun solveB(map: List<List<Char>>): Int {
+    return TritonMap.buildForB(map).solveB()
+}
+
 class TritonMap private constructor(
     val map: List<List<Char>>,
     val entryPositions: List<Point>,
@@ -62,9 +66,9 @@ class TritonMap private constructor(
     fun solveA(): Int {
         val firstStep = Step(entryPositions.first(), emptySet())
         val seenSteps = mutableMapOf(firstStep to 0)
-        val nodesToVisit = sortedSetOf(pathComparator(seenSteps), Path(firstStep, emptySet()))
+        val nodesToVisit = sortedSetOf(pathComparator(seenSteps), SingleRobotPath(firstStep, emptySet()))
 
-        while (!nodesToVisit.first().hasAllKeys()) {
+        while (nodesToVisit.first().finalKeyCount != allKeys.size) {
             val pathNode = nodesToVisit.pollFirst()!!
             val currentStep = pathNode.finalStep
             val currentKeys = currentStep.keys
@@ -77,10 +81,10 @@ class TritonMap private constructor(
                     val cell = map[point]
                     if (point.isKey()) {
                         val nextStep = Step(point, currentKeys + cell)
-                        visit(seenSteps, currentPath, nodesToVisit, nextStep, newDistance)
+                        visit(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
                     } else if (cell.toLowerCase() in currentKeys) {
                         val nextStep = Step(point, currentKeys)
-                        visit(seenSteps, currentPath, nodesToVisit, nextStep, newDistance)
+                        visit(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
                     }
                 }
             }
@@ -93,53 +97,80 @@ class TritonMap private constructor(
     private fun visit(
         seenSteps: MutableMap<Step, Int>,
         currentPath: Set<Step>,
-        nodesToVisit: TreeSet<Path>,
         nextStep: Step,
         newDistance: Int
-    ) {
-        if (nextStep in seenSteps) {
-            val bestDistance = seenSteps.getValue(nextStep)
-            seenSteps[nextStep] = minOf(bestDistance, newDistance)
-        } else if (nextStep !in currentPath) {
-            val newPath = currentPath + nextStep
-            seenSteps[nextStep] = newDistance
-            nodesToVisit.add(Path(nextStep, newPath))
+    ): SingleRobotPath? {
+        return when (nextStep) {
+            in seenSteps -> {
+                val bestDistance = seenSteps.getValue(nextStep)
+                seenSteps[nextStep] = minOf(bestDistance, newDistance)
+                null
+            }
+            !in currentPath -> {
+                val newPath = currentPath + nextStep
+                seenSteps[nextStep] = newDistance
+                SingleRobotPath(nextStep, newPath)
+            }
+            else -> null
         }
     }
 
     fun solveB(): Int {
-        TODO("Not implemented. This needs some thought")
         //4 Robots
         //Sharing a keyset
         //Separate / Shared seen steps
-        val firstSteps = entryPositions.map { Step(it, emptySet()) }.toList()
-        val seenStepDistances = firstSteps.map { it to 0 }.toMap().toMutableMap()
+        val robots = entryPositions
+        val maxKeysByRobot = findRobotMaxKeys()
 
-        val nodesToVisit = firstSteps.mapIndexed { i, firstStep ->
-            entryPositions[i] to sortedSetOf(pathComparator(seenStepDistances), Path(firstStep, emptySet()))
-        }.toMap()
+        val individualFirstSteps = robots.map { Step(it, emptySet()) }
+        val seenStepDistances = individualFirstSteps.map { step -> step to 0 }.toMap().toMutableMap()
 
-        val finalNodes = mutableMapOf<Int, Path>()
-        val keyCountByQuadrant = countQuadrantKeys()
+        //Should be a list of multirobot paths
+        val nodesToVisit = sortedSetOf(
+            pathComparator(seenStepDistances),
+            MultiRobotPath(
+                individualFirstSteps.map { firstStep ->
+                    firstStep.point to SingleRobotPath(firstStep, emptySet())
+                }.toMap()
+            )
+        )
 
-        val lockedDoorDistances = mutableMapOf<Step, Int>()
-        val lockedDoors = entryPositions.map { it to mutableSetOf<Path>() }.toMap()
+        while (nodesToVisit.first().finalKeyCount != allKeys.size) {
+            val multiRobotPathNode = nodesToVisit.pollFirst()!!
+            val totalKeys = multiRobotPathNode.collectedKeys
 
-        while (totalNextKeys(seenStepDistances, nodesToVisit.values) != allKeys) {
-            val noLockedDoors =
-                entryPositions.firstOrNull { lockedDoors[it].isNullOrEmpty() && !(nodesToVisit[it].isNullOrEmpty()) }
+            val incompletePaths = multiRobotPathNode.incompletePaths(maxKeysByRobot)
+            incompletePaths.forEach { (robot, pathNode) ->
+                val currentStep = pathNode.finalStep
+                val stepKeys = pathNode.collectedKeys
+                val currentPath = pathNode.path
+                val currentDistance = seenStepDistances.getValue(currentStep)
 
-            if (noLockedDoors != null) {
-
-            } else {
-
+                val neighbours = distanceGraph.getValue(currentStep.point)
+                neighbours.forEach { (point, distance) ->
+                    val newDistance = currentDistance + distance
+                    if (point.y in map.indices && point.x in map[0].indices) {
+                        val cell = map[point]
+                        if (point.isKey()) {
+                            val nextStep = Step(point, stepKeys + cell)
+                            visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
+                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
+                            }
+                        } else if (cell.toLowerCase() in totalKeys) {
+                            val nextStep = Step(point, stepKeys)
+                            visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
+                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        return totalPathLength(seenStepDistances, finalNodes.values)
+        return nodesToVisit.first().length(seenStepDistances)
     }
 
-    private fun countQuadrantKeys(): Map<Point, Int> {
+    private fun findRobotMaxKeys(): Map<Point, Int> {
         val counts = mutableMapOf<Point, Int>().withDefault { 0 }
 
         map.forEachIndexed { y, row ->
@@ -147,7 +178,7 @@ class TritonMap private constructor(
                 if (cell in 'a'..'z') {
                     val xComponent = if (x < originalEntry.x) -1 else 1
                     val yComponent = if (y < originalEntry.y) -1 else 1
-                    val quadrant = Point(xComponent, yComponent)
+                    val quadrant = originalEntry + Point(xComponent, yComponent)
                     counts[quadrant] = counts.getValue(quadrant) + 1
                 }
             }
@@ -156,22 +187,12 @@ class TritonMap private constructor(
         return counts
     }
 
-    private fun totalPathLength(seenSteps: Map<Step, Int>, paths: Collection<Path>): Int {
-        return paths.sumBy { it.length(seenSteps) }
-    }
-
-    private fun totalNextKeys(stepDistances: Map<Step, Int>, values: Collection<TreeSet<Path>>): Any {
-        return values.map { it.first().length(stepDistances) }
-    }
-
     private fun Point.isKey() = map[this] in 'a'..'z'
     private fun Point.isDoor() = map[this] in 'A'..'Z'
 
-    private fun Path.hasAllKeys(): Boolean = this.finalStep.hasAllKeys(allKeys.size)
-
     private fun pathComparator(seenSteps: Map<Step, Int>): Comparator<Path> {
         return compareBy<Path> { it.length(seenSteps) }
-            .thenByDescending { it.finalStep.keyCount }
+            .thenByDescending { it.finalKeyCount }
             .thenBy { it.hashCode() }
     }
 
@@ -204,21 +225,54 @@ class TritonMap private constructor(
             return TritonMap(mutableMap, newStarts, originalStart)
         }
     }
-
-    private fun Step.isReady(ownedKeys: Set<Char>): Boolean {
-        return !this.point.isDoor() || map[this.point].toLowerCase() in ownedKeys
-    }
 }
 
-data class Path(val finalStep: Step, val path: Set<Step>) {
+interface Path {
+    fun length(seenSteps: Map<Step, Int>): Int
+    val finalKeyCount: Int
+    val collectedKeys: Set<Char>
+}
+
+data class SingleRobotPath(val finalStep: Step, val path: Set<Step>) : Path {
     override fun toString(): String {
         return "Path(finalStep=${finalStep.point}, keys=${finalStep.keys})"
     }
 
-    fun length(seenSteps: Map<Step, Int>) = seenSteps.getValue(this.finalStep)
+    override fun length(seenSteps: Map<Step, Int>) = seenSteps.getValue(this.finalStep)
+
+    override val finalKeyCount: Int
+        get() = finalStep.keyCount
+    override val collectedKeys: Set<Char>
+        get() = finalStep.keys
 }
 
+/**
+ * A step in the path: A point + a collection of keys
+ */
 data class Step(val point: Point, val keys: Set<Char>) {
     val keyCount = keys.size
-    fun hasAllKeys(expectedCount: Int) = keyCount == expectedCount
 }
+
+data class MultiRobotPath(val paths: Map<Point, SingleRobotPath>) : Path {
+    operator fun get(point: Point) = paths[point]
+
+    override fun length(seenSteps: Map<Step, Int>): Int {
+        return paths.values.sumBy { it.length(seenSteps) }
+    }
+
+    fun copyWith(point: Point, path: SingleRobotPath): MultiRobotPath {
+        val newPaths = paths.toMutableMap()
+        newPaths[point] = path
+        return copy(paths = newPaths)
+    }
+
+    override val finalKeyCount: Int
+        get() = paths.values.sumBy { it.finalKeyCount }
+    override val collectedKeys: Set<Char>
+        get() = paths.values.map { it.collectedKeys }.flatten().toSet()
+
+    fun incompletePaths(totalKeys: Map<Point, Int>): Map<Point, SingleRobotPath> {
+        return paths.filter { (key, value) -> value.finalKeyCount != totalKeys[key] }
+    }
+}
+
