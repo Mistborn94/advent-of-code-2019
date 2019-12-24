@@ -104,11 +104,13 @@ class TritonMap private constructor(
             in seenSteps -> {
                 val bestDistance = seenSteps.getValue(nextStep)
                 seenSteps[nextStep] = minOf(bestDistance, newDistance)
+                val newPath = currentPath + nextStep
+                SingleRobotPath(nextStep, newPath)
                 null
             }
             !in currentPath -> {
-                val newPath = currentPath + nextStep
                 seenSteps[nextStep] = newDistance
+                val newPath = currentPath + nextStep
                 SingleRobotPath(nextStep, newPath)
             }
             else -> null
@@ -120,7 +122,7 @@ class TritonMap private constructor(
         //Sharing a keyset
         //Separate / Shared seen steps
         val robots = entryPositions
-        val maxKeysByRobot = findRobotMaxKeys()
+        val keysByRobot = findRobotKeys()
 
         val individualFirstSteps = robots.map { Step(it, emptySet()) }
         val seenStepDistances = individualFirstSteps.map { step -> step to 0 }.toMap().toMutableMap()
@@ -139,10 +141,9 @@ class TritonMap private constructor(
             val multiRobotPathNode = nodesToVisit.pollFirst()!!
             val totalKeys = multiRobotPathNode.collectedKeys
 
-            val incompletePaths = multiRobotPathNode.incompletePaths(maxKeysByRobot)
+            val incompletePaths = multiRobotPathNode.incompletePaths(keysByRobot)
             incompletePaths.forEach { (robot, pathNode) ->
                 val currentStep = pathNode.finalStep
-                val stepKeys = pathNode.collectedKeys
                 val currentPath = pathNode.path
                 val currentDistance = seenStepDistances.getValue(currentStep)
 
@@ -152,12 +153,12 @@ class TritonMap private constructor(
                     if (point.y in map.indices && point.x in map[0].indices) {
                         val cell = map[point]
                         if (point.isKey()) {
-                            val nextStep = Step(point, stepKeys + cell)
+                            val nextStep = Step(point, totalKeys + cell)
                             visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
                                 nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
                             }
                         } else if (cell.toLowerCase() in totalKeys) {
-                            val nextStep = Step(point, stepKeys)
+                            val nextStep = Step(point, totalKeys)
                             visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
                                 nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
                             }
@@ -170,21 +171,18 @@ class TritonMap private constructor(
         return nodesToVisit.first().length(seenStepDistances)
     }
 
-    private fun findRobotMaxKeys(): Map<Point, Int> {
-        val counts = mutableMapOf<Point, Int>().withDefault { 0 }
+    private fun findRobotKeys(): Map<Point, Set<Char>> {
 
-        map.forEachIndexed { y, row ->
-            row.forEachIndexed { x, cell ->
-                if (cell in 'a'..'z') {
-                    val xComponent = if (x < originalEntry.x) -1 else 1
-                    val yComponent = if (y < originalEntry.y) -1 else 1
-                    val quadrant = originalEntry + Point(xComponent, yComponent)
-                    counts[quadrant] = counts.getValue(quadrant) + 1
-                }
-            }
-        }
+        return map.indices.flatMap { y -> map[0].indices.map { x -> Point(x, y) } }
+            .filter { it.isKey() }
+            .groupBy { (x, y) -> getRobotKey(x, y) }
+            .mapValues { (_, value) -> value.map { map[it] }.toSet() }
+    }
 
-        return counts
+    private fun getRobotKey(x: Int, y: Int): Point {
+        val xComponent = if (x < originalEntry.x) -1 else 1
+        val yComponent = if (y < originalEntry.y) -1 else 1
+        return originalEntry + Point(xComponent, yComponent)
     }
 
     private fun Point.isKey() = map[this] in 'a'..'z'
@@ -267,12 +265,12 @@ data class MultiRobotPath(val paths: Map<Point, SingleRobotPath>) : Path {
     }
 
     override val finalKeyCount: Int
-        get() = paths.values.sumBy { it.finalKeyCount }
+        get() = paths.values.flatMap { it.collectedKeys }.toSet().size
     override val collectedKeys: Set<Char>
-        get() = paths.values.map { it.collectedKeys }.flatten().toSet()
+        get() = paths.values.flatMap { it.collectedKeys }.toSet()
 
-    fun incompletePaths(totalKeys: Map<Point, Int>): Map<Point, SingleRobotPath> {
-        return paths.filter { (key, value) -> value.finalKeyCount != totalKeys[key] }
+    fun incompletePaths(totalKeys: Map<Point, Set<Char>>): Map<Point, SingleRobotPath> {
+        return paths.filter { (key, value) -> totalKeys.getValue(key).any { it !in value.collectedKeys } }
     }
 }
 

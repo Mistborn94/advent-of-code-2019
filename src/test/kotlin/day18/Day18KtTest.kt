@@ -3,7 +3,6 @@ package day18
 import helper.readInput
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.test.assertTrue
 
 class Day18KtTest {
 
@@ -59,7 +58,7 @@ class Day18KtTest {
     """.trimIndent()
 
     val sampleB8 = """
-        ####### 
+        #######
         #a.#Cd#
         ##...##
         ##.@.##
@@ -71,9 +70,9 @@ class Day18KtTest {
     val sampleB24 = """
         ###############
         #d.ABC.#.....a#
-        ######@#@######
         ###############
-        ######@#@######
+        #######@#######
+        ###############
         #b.....#.....c#
         ###############
     """.trimIndent()
@@ -81,9 +80,9 @@ class Day18KtTest {
     val sampleB32 = """
         #############
         #DcBa.#.GhKl#
-        #.###@#@#I###
-        #e#d#####j#k#
-        ###C#@#@###J#
+        #.#######I###
+        #e#d##@##j#k#
+        ###C#######J#
         #fEbA.#.FgHi#
         #############
     """.trimIndent()
@@ -92,9 +91,9 @@ class Day18KtTest {
         #############
         #g#f.D#..h#l#
         #F###e#E###.#
-        #dCba@#@BcIJ#
-        #############
-        #nK.L@#@G...#
+        #dCba###BcIJ#
+        ######@######
+        #nK.L###G...#
         #M###N#H###.#
         #o#m..#i#jk.#
         #############
@@ -112,10 +111,10 @@ class Day18KtTest {
 
     @Test
     fun testSamplesB() {
-//        assertEquals(8, solveB(sampleB8.toMap()))
-//        assertEquals(24, solveB(sampleB24.toMap()))
+        assertEquals(8, solveB(sampleB8.toMap()))
+        assertEquals(24, solveB(sampleB24.toMap()))
 //        assertEquals(32, solveB(sampleB32.toMap()))
-        assertEquals(72, solveB(sampleB72.toMap()))
+//        assertEquals(72, solveB(sampleB72.toMap()))
     }
 
     @Test
@@ -129,7 +128,7 @@ class Day18KtTest {
     fun solveB() {
         val solveB = solveB(readInput(18).readText().trim().toMap())
         println("Day 18 B $solveB")
-        assertTrue(3048 > solveB)
+        assertEquals(1732, solveB)
     }
 
     private fun String.toMap() = split("\n").map { it.toCharArray().toList() }
