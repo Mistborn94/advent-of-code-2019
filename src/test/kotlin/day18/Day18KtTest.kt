@@ -113,8 +113,8 @@ class Day18KtTest {
     fun testSamplesB() {
         assertEquals(8, solveB(sampleB8.toMap()))
         assertEquals(24, solveB(sampleB24.toMap()))
-//        assertEquals(32, solveB(sampleB32.toMap()))
-//        assertEquals(72, solveB(sampleB72.toMap()))
+        assertEquals(32, solveB(sampleB32.toMap()))
+        assertEquals(72, solveB(sampleB72.toMap()))
     }
 
     @Test
@@ -125,8 +125,9 @@ class Day18KtTest {
     }
 
     @Test
+//    @Ignore("I might have broke it again")
     fun solveB() {
-        val solveB = solveB(readInput(18).readText().trim().toMap())
+        val solveB = solveB(readInput(18).readText().trim().toMap(), true)
         println("Day 18 B $solveB")
         assertEquals(1732, solveB)
     }
