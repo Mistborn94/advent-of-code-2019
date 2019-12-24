@@ -10,8 +10,8 @@ fun solveA(map: List<List<Char>>): Int {
     return TritonMap.buildForA(map).solveA()
 }
 
-fun solveB(map: List<List<Char>>, shortcut: Boolean = false): Int {
-    return TritonMap.buildForB(map).solveB(shortcut)
+fun solveB(map: List<List<Char>>): Int {
+    return TritonMap.buildForB(map).solveB()
 }
 
 class TritonMap private constructor(
@@ -64,7 +64,7 @@ class TritonMap private constructor(
     }
 
     fun solveA(): Int {
-        val firstStep = SingleRobotStep(entryPositions.first(), emptySet())
+        val firstStep = Step(entryPositions.first(), emptySet())
         val seenSteps = mutableMapOf(firstStep to 0)
         val nodesToVisit = sortedSetOf(pathComparator(seenSteps), SingleRobotPath(firstStep, emptySet()))
 
@@ -80,11 +80,11 @@ class TritonMap private constructor(
                 if (point.y in map.indices && point.x in map[0].indices) {
                     val cell = map[point]
                     if (point.isKey()) {
-                        val nextStep = SingleRobotStep(point, currentKeys + cell)
-                        visitA(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
+                        val nextStep = Step(point, currentKeys + cell)
+                        visit(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
                     } else if (cell.toLowerCase() in currentKeys) {
-                        val nextStep = SingleRobotStep(point, currentKeys)
-                        visitA(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
+                        val nextStep = Step(point, currentKeys)
+                        visit(seenSteps, currentPath, nextStep, newDistance)?.let(nodesToVisit::add)
                     }
                 }
             }
@@ -94,10 +94,10 @@ class TritonMap private constructor(
         return seenSteps.getValue(target.finalStep)
     }
 
-    private fun visitA(
-        seenSteps: MutableMap<SingleRobotStep, Int>,
-        currentPath: Set<SingleRobotStep>,
-        nextStep: SingleRobotStep,
+    private fun visit(
+        seenSteps: MutableMap<Step, Int>,
+        currentPath: Set<Step>,
+        nextStep: Step,
         newDistance: Int
     ): SingleRobotPath? {
         return when (nextStep) {
@@ -117,46 +117,20 @@ class TritonMap private constructor(
         }
     }
 
-    private fun visitB(
-        seenSteps: MutableMap<MultiRobotStep, Int>,
-        currentPath: Set<SingleRobotStep>,
-        nextSingleStep: SingleRobotStep,
-        nextMultiStep: MultiRobotStep,
-        newDistance: Int
-    ): SingleRobotPath? {
-        return when {
-            nextMultiStep in seenSteps -> {
-                val bestDistance = seenSteps.getValue(nextMultiStep)
-                seenSteps[nextMultiStep] = minOf(bestDistance, newDistance)
-                null
-            }
-            nextSingleStep !in currentPath -> {
-                seenSteps[nextMultiStep] = newDistance
-                val newPath = currentPath + nextSingleStep
-                SingleRobotPath(nextSingleStep, newPath)
-            }
-            else -> null
-        }
-    }
-
-    /**
-     * The shorcut can be used if a robot's path strictly does not go outside its quarter
-     */
-    fun solveB(completeShortcut: Boolean): Int {
+    fun solveB(): Int {
         //4 Robots
         //Sharing a keyset
         //Separate / Shared seen steps
         val robots = entryPositions
         val keysByRobot = findRobotKeys()
 
-        val individualFirstSteps = robots.map { SingleRobotStep(it, emptySet()) }
-        val firstMultiRobotStep = MultiRobotStep(individualFirstSteps.map { step -> step.point to step }.toMap())
-        val seenStepDistances = mutableMapOf(firstMultiRobotStep to 0).toMutableMap()
+        val individualFirstSteps = robots.map { Step(it, emptySet()) }
+        val seenStepDistances = individualFirstSteps.map { step -> step to 0 }.toMap().toMutableMap()
 
+        //Should be a list of multirobot paths
         val nodesToVisit = sortedSetOf(
             pathComparator(seenStepDistances),
             MultiRobotPath(
-                firstMultiRobotStep,
                 individualFirstSteps.map { firstStep ->
                     firstStep.point to SingleRobotPath(firstStep, emptySet())
                 }.toMap()
@@ -165,17 +139,13 @@ class TritonMap private constructor(
 
         while (nodesToVisit.first().finalKeyCount != allKeys.size) {
             val multiRobotPathNode = nodesToVisit.pollFirst()!!
-            val multiRobotStep = multiRobotPathNode.finalStep
-
             val totalKeys = multiRobotPathNode.collectedKeys
-            val currentDistance = seenStepDistances.getValue(multiRobotStep)
 
-            val incompletePaths =
-                if (completeShortcut) multiRobotPathNode.incompletePaths(keysByRobot) else multiRobotPathNode.paths
+            val incompletePaths = multiRobotPathNode.incompletePaths(keysByRobot)
             incompletePaths.forEach { (robot, pathNode) ->
                 val currentStep = pathNode.finalStep
                 val currentPath = pathNode.path
-                val stepKeys = pathNode.collectedKeys
+                val currentDistance = seenStepDistances.getValue(currentStep)
 
                 val neighbours = distanceGraph.getValue(currentStep.point)
                 neighbours.forEach { (point, distance) ->
@@ -183,16 +153,14 @@ class TritonMap private constructor(
                     if (point.y in map.indices && point.x in map[0].indices) {
                         val cell = map[point]
                         if (point.isKey()) {
-                            val nextSingleStep = SingleRobotStep(point, stepKeys + cell)
-                            val nextMultiStep = multiRobotStep.copyWith(point, nextSingleStep)
-                            visitB(seenStepDistances, currentPath, nextSingleStep, nextMultiStep, newDistance)?.let {
-                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it, nextMultiStep))
+                            val nextStep = Step(point, totalKeys + cell)
+                            visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
+                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
                             }
                         } else if (cell.toLowerCase() in totalKeys) {
-                            val nextSingleStep = SingleRobotStep(point, stepKeys)
-                            val nextMultiStep = multiRobotStep.copyWith(point, nextSingleStep)
-                            visitB(seenStepDistances, currentPath, nextSingleStep, nextMultiStep, newDistance)?.let {
-                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it, nextMultiStep))
+                            val nextStep = Step(point, totalKeys)
+                            visit(seenStepDistances, currentPath, nextStep, newDistance)?.let {
+                                nodesToVisit.add(multiRobotPathNode.copyWith(robot, it))
                             }
                         }
                     }
@@ -220,8 +188,8 @@ class TritonMap private constructor(
     private fun Point.isKey() = map[this] in 'a'..'z'
     private fun Point.isDoor() = map[this] in 'A'..'Z'
 
-    private fun <S : Step> pathComparator(seenSteps: Map<S, Int>): Comparator<Path<S>> {
-        return compareBy<Path<S>> { it.length(seenSteps) }
+    private fun pathComparator(seenSteps: Map<Step, Int>): Comparator<Path> {
+        return compareBy<Path> { it.length(seenSteps) }
             .thenByDescending { it.finalKeyCount }
             .thenBy { it.hashCode() }
     }
@@ -257,61 +225,47 @@ class TritonMap private constructor(
     }
 }
 
-interface Path<S : Step> {
-    fun length(seenSteps: Map<S, Int>): Int
+interface Path {
+    fun length(seenSteps: Map<Step, Int>): Int
     val finalKeyCount: Int
-        get() = collectedKeys.size
     val collectedKeys: Set<Char>
 }
 
-data class SingleRobotPath(val finalStep: SingleRobotStep, val path: Set<SingleRobotStep>) : Path<SingleRobotStep> {
+data class SingleRobotPath(val finalStep: Step, val path: Set<Step>) : Path {
     override fun toString(): String {
         return "Path(finalStep=${finalStep.point}, keys=${finalStep.keys})"
     }
 
-    override fun length(seenSteps: Map<SingleRobotStep, Int>) = seenSteps.getValue(this.finalStep)
+    override fun length(seenSteps: Map<Step, Int>) = seenSteps.getValue(this.finalStep)
 
+    override val finalKeyCount: Int
+        get() = finalStep.keyCount
     override val collectedKeys: Set<Char>
         get() = finalStep.keys
-}
-
-interface Step {
-    val keys: Set<Char>
-    val keyCount: Int
-        get() = keys.size
 }
 
 /**
  * A step in the path: A point + a collection of keys
  */
-data class SingleRobotStep(val point: Point, override val keys: Set<Char>) : Step {
-    override val keyCount = keys.size
+data class Step(val point: Point, val keys: Set<Char>) {
+    val keyCount = keys.size
 }
 
-data class MultiRobotStep(val steps: Map<Point, SingleRobotStep>) : Step {
-    override val keys = steps.values.flatMap { it.keys }.toSet()
-
-    fun copyWith(robot: Point, step: SingleRobotStep): MultiRobotStep {
-        val newSteps = steps.toMutableMap()
-        newSteps[robot] = step
-        return MultiRobotStep(steps = newSteps)
-    }
-}
-
-data class MultiRobotPath(val finalStep: MultiRobotStep, val paths: Map<Point, SingleRobotPath>) :
-    Path<MultiRobotStep> {
+data class MultiRobotPath(val paths: Map<Point, SingleRobotPath>) : Path {
     operator fun get(point: Point) = paths[point]
 
-    override fun length(seenSteps: Map<MultiRobotStep, Int>): Int {
-        return seenSteps.getValue(this.finalStep)
+    override fun length(seenSteps: Map<Step, Int>): Int {
+        return paths.values.sumBy { it.length(seenSteps) }
     }
 
-    fun copyWith(point: Point, path: SingleRobotPath, step: MultiRobotStep): MultiRobotPath {
+    fun copyWith(point: Point, path: SingleRobotPath): MultiRobotPath {
         val newPaths = paths.toMutableMap()
         newPaths[point] = path
-        return MultiRobotPath(paths = newPaths, finalStep = step)
+        return copy(paths = newPaths)
     }
 
+    override val finalKeyCount: Int
+        get() = paths.values.flatMap { it.collectedKeys }.toSet().size
     override val collectedKeys: Set<Char>
         get() = paths.values.flatMap { it.collectedKeys }.toSet()
 
