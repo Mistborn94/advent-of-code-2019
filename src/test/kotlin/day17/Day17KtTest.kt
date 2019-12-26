@@ -68,6 +68,7 @@ class Day17KtTest {
     }
 
     @Test
+    @Ignore("Too slow :(")
     fun solveB() {
         val inputs = readInput(17).readText().trim().split(",").map(String::toLong)
         val solveB = solveB(inputs)

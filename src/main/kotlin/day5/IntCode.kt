@@ -3,6 +3,8 @@ package day5
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 
+private val EOL = '\n'.toLong()
+
 private fun binaryOperation(intCode: IntCode, params: List<Param>, operation: (Long, Long) -> Long) {
     val arg1 = params[0].resolveValue(intCode)
     val arg2 = params[1].resolveValue(intCode)
@@ -93,6 +95,9 @@ class IntCode(
     var instructionPointer = 0
     var relativeBase = 0
 
+    val running: Boolean
+        get() = memory[instructionPointer] != 99L
+
     /**
      * Run until the program ends (OpCode 99), blocking when waiting for input
      */
@@ -113,7 +118,7 @@ class IntCode(
     fun runUtilInput() {
         var instruction = memory[instructionPointer]
 
-        while (instruction != 99L && !(instruction == 3L && inputs.isEmpty())) {
+        while (instruction != 99L && !(instruction.toString().endsWith("3") && inputs.isEmpty())) {
             instruction = runInstruction(instruction)
         }
     }
@@ -145,8 +150,10 @@ class IntCode(
     }
 
     fun nextInput(): Long {
-        inputNotifier()
-        return inputs.take()
+        return inputs.ifEmpty {
+            inputNotifier()
+            inputs
+        }.take()
     }
 
     operator fun set(index: Int, value: Long) {

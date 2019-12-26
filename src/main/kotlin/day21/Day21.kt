@@ -36,7 +36,9 @@ private fun runSpringdroid(
         throw IllegalArgumentException("Springer droid has limited memory")
     }
 
-    intCode.inputs.addAll(instructions.joinToString(separator = "\n", postfix = "\n").map { it.toInt().toLong() })
+    instructions.forEach {
+        intCode.sendAscii(it)
+    }
 
     intCode.runUtilInput()
 
