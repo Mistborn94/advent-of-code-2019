@@ -2,8 +2,6 @@ package day22
 
 import helper.readInput
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 class Day22KtTest {
@@ -189,15 +187,13 @@ class Day22KtTest {
     }
 
     @Test
-    @Ignore("Still waaaay too slow")
     fun solveB() {
-//        val solveB = solveB(
-//            readInput(22).readLines(), 2020,
-//            119_315_717_514_047,
-//            101_741_582_076_661
-//        )
-        val solveB = solveB(readInput(22).readLines(), 2020, 1_514_047, 2_076_661)
+        val solveB = solveB(
+            readInput(22).readLines(), 2020,
+            119_315_717_514_047,
+            101_741_582_076_661
+        )
         println("Day 22B $solveB")
-        assertTrue(solveB > 25_035_251_100_630)
+        assertEquals(29988879027217, solveB)
     }
 }

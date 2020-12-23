@@ -2,7 +2,25 @@ package day22
 
 class CardSimulator(val count: Long, instructions: List<String>) {
 
-    val instructionFunctions: List<ShuffleTechnique> = instructions.map(this::mapInstruction)
+    val instructionFunctions: List<ShuffleTechnique> = reduceInstructions(instructions.map(this::mapInstruction))
+
+    private fun reduceInstructions(list: List<ShuffleTechnique>): List<ShuffleTechnique> {
+        var reducedList = list
+        while (reducedList.size > 3) {
+            val newList = mutableListOf<ShuffleTechnique>()
+            reducedList.forEach { current ->
+                if (newList.isEmpty()) {
+                    newList.add(current)
+                } else {
+                    val prev = newList.removeAt(newList.lastIndex)
+                    val elements = prev.combineWith(current)
+                    newList.addAll(elements)
+                }
+            }
+            reducedList = newList
+        }
+        return reducedList
+    }
 
     private fun mapInstruction(instruction: String): ShuffleTechnique {
         return when {
@@ -16,11 +34,34 @@ class CardSimulator(val count: Long, instructions: List<String>) {
         }
     }
 
-    fun runIteration(cardIndex: Long, instructions: List<ShuffleTechnique> = instructionFunctions): Long =
-        instructions.fold(cardIndex) { acc, instruction -> instruction.nextIndex(acc) }
+    fun runIteration(trackedCard: Long, instructions: List<ShuffleTechnique> = instructionFunctions): Long =
+        instructions.fold(trackedCard) { acc, instruction -> instruction.nextIndex(acc) }
 
-    fun runInverseIteration(cardIndex: Long, instructions: List<ShuffleTechnique> = instructionFunctions): Long =
-        instructions.foldRight(cardIndex) { instruction, acc -> instruction.previousIndex(acc) }
+    fun runInverseIteration(trackedIndex: Long, instructions: List<ShuffleTechnique> = instructionFunctions): Long =
+        instructions.foldRight(trackedIndex) { instruction, acc -> instruction.previousIndex(acc) }
+
+    tailrec fun runInverseIterations(trackedIndex: Long, iterations: Long): Long {
+        if (iterations < 2) {
+            var current = trackedIndex
+            repeat(iterations.toInt()) {
+                current = runInverseIteration(current)
+            }
+            return current
+        }
+
+        var currentMultiple = 1L
+        var nextMultiple = currentMultiple * 2
+        var currentList = instructionFunctions
+
+        do {
+            currentMultiple = nextMultiple
+            currentList = reduceInstructions(currentList + currentList)
+            nextMultiple *= 2
+        } while (nextMultiple < iterations)
+
+        val previousIndex = runInverseIteration(trackedIndex, currentList)
+        return runInverseIterations(previousIndex, iterations - currentMultiple)
+    }
 }
 
 val reversePattern = "deal into new stack"
@@ -37,32 +78,5 @@ fun solveB(
     stackSize: Long,
     repetitions: Long
 ): Long {
-    val simulator = CardSimulator(stackSize, instructions)
-
-//    val compositeInstruction = instructionFunctions.reduce { acc, next -> acc.andThen(next) }
-
-    var previousIndex = CardSimulator(stackSize, instructions).runInverseIteration(trackedIndex)
-
-    var iteration = 1
-    while (iteration < repetitions) {
-//        println("Current Index $currentIndex")
-        previousIndex = simulator.runInverseIteration(previousIndex)
-        iteration += 1
-//        if (iteration % 100_000 == 0) {
-//            println("Searching for repeats at $iteration")
-//        }
-    }
-
-//    if (iteration.toLong() == repetitions) {
-//        return previousIndex
-//    }
-//
-//    val remaining = repetitions % iteration
-//    println("Found repeats at $iteration, $remaining remaining")
-//
-//    for (it in 0 until remaining) {
-//        previousIndex = simulator.runIterationB(instructionFunctions, previousIndex)
-//    }
-
-    return previousIndex
+    return CardSimulator(stackSize, instructions).runInverseIterations(trackedIndex, repetitions)
 }

@@ -1,5 +1,6 @@
 package helper
 
+import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.BlockingQueue
 
@@ -53,19 +54,19 @@ operator fun <E> MutableList<MutableList<E>>.set(point: Point, value: E) {
  * Calculate the Modular Multiplicative Inverse of [a] under [m]
  * ax mod m = 1 where x in {0,1,2....m-1}
  */
-fun mmi(a: Long, m: Long): Long {
+fun mmi(a: BigInteger, m: BigInteger): BigInteger {
     val (g, x, y) = extendedGcd(a, m)
     //Make it positive. Just in case.
     val positiveX = makePositive(m, x)
 
-    assert(g == 1L) { "$a and $m is not coprime" }
-    assert(a * positiveX % m == 1L) { "$a * $positiveX % $m != 1" }
-    assert(positiveX in 0 until m) { "x not in range 0..${m - 1}" }
+    assert(g == BigInteger.ONE) { "$a and $m is not coprime" }
+    assert(a * positiveX % m == BigInteger.ONE) { "$a * $positiveX % $m != 1" }
+    assert(positiveX.longValueExact() in 0 until m.toLong()) { "x not in range 0 until m" }
 
     return positiveX
 }
 
-private fun makePositive(m: Long, x: Long) = (m + x) % m
+private fun makePositive(m: BigInteger, x: BigInteger) = (m + x) % m
 
 
 /**
@@ -80,29 +81,32 @@ private fun makePositive(m: Long, x: Long) = (m + x) % m
  * https://www.geeksforgeeks.org/chinese-remainder-theorem-set-2-implementation/
  */
 fun solveRemainder(
-    moduli: List<Long>,
-    remainders: List<Long>
-): Long {
-    val indices = moduli.indices
+    moduli: List<BigInteger>,
+    remainders: List<BigInteger>
+): BigInteger {
+    val moduliBigInt = moduli
+    val indices = moduliBigInt.indices
 
-    val moduloProduct = moduli.reduce { acc, l -> acc * l }
-    val partialProducts = moduli.map { moduloProduct / it }
-    val inverse = indices.map { mmi(partialProducts[it], moduli[it]) }
+    val moduloProduct = moduliBigInt.reduce { acc, l -> acc * l }
+    val partialProducts = moduliBigInt.map { moduloProduct / it }
+    val inverse = indices.map { mmi(partialProducts[it], moduliBigInt[it]) }
 
     return indices.map { remainders[it] * partialProducts[it] * inverse[it] }.sum() % moduloProduct
 }
+
+private fun Iterable<BigInteger>.sum() = reduce { acc, value -> acc + value }
 
 /**
  * https://cp-algorithms.com/algebra/extended-euclid-algorithm.html
  * Calculate the gcd and x and y where
  *  ax + by = gcd(a,b)
  */
-fun extendedGcd(a: Long, b: Long): ExtendedGcd {
+fun extendedGcd(a: BigInteger, b: BigInteger): ExtendedGcd {
     return when {
         //a = 0, so by = b
-        a == 0L -> ExtendedGcd(b, 0, 1)
+        a == BigInteger.ZERO -> ExtendedGcd(b, BigInteger.ZERO, BigInteger.ONE)
         //b = 0 so ax = a
-        b == 0L -> ExtendedGcd(a, 1, 0)
+        b == BigInteger.ZERO -> ExtendedGcd(a, BigInteger.ONE, BigInteger.ZERO)
         else -> {
             val (g, x1, y1) = extendedGcd(b, a % b)
             //This result means: b⋅x1 + (a % b)⋅y1 = g
@@ -126,4 +130,4 @@ fun extendedGcd(a: Long, b: Long): ExtendedGcd {
 }
 
 //ax + by = gcd(a,b)
-data class ExtendedGcd(val g: Long, val x: Long, val y: Long)
+data class ExtendedGcd(val g: BigInteger, val x: BigInteger, val y: BigInteger)
