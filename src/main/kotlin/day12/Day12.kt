@@ -158,7 +158,7 @@ fun lowestCommonMultiple(x: Int, y: Int, z: Int): Long {
 }
 
 fun lowestCommonMultiple(a: Long, b: Long): Long {
-    return a / greatestCommonDenominator(a, b) * b
+    return a * b / greatestCommonDenominator(a, b)
 }
 
 tailrec fun greatestCommonDenominator(a: Long, b: Long): Long {
