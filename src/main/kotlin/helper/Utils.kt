@@ -131,3 +131,5 @@ fun extendedGcd(a: BigInteger, b: BigInteger): ExtendedGcd {
 
 //ax + by = gcd(a,b)
 data class ExtendedGcd(val g: BigInteger, val x: BigInteger, val y: BigInteger)
+
+fun <A, B, R> Iterable<A>.cartesianProduct(other: Iterable<B>, transform: (A, B) -> R): List<R> = flatMap { a -> other.map { b -> transform(a, b) } }

@@ -4,6 +4,8 @@ import helper.readInput
 import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class Day21KtTest {
 
@@ -16,10 +18,11 @@ class Day21KtTest {
     }
 
     @Test
-    @Ignore("Not solved yet")
+//    @Ignore("Not solved yet")
     fun solveB() {
         val inputs = readInput(21).readText().trim().split(",").map { it.toLong() }
         val solveB = solveB(inputs)
+        kotlin.test.assertEquals(1142048514, solveB)
         println("Day 21B $solveB")
 
     }

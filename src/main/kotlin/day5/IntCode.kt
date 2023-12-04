@@ -94,6 +94,7 @@ class IntCode(
     var memory = originalProgram.toMutableList()
     var instructionPointer = 0
     var relativeBase = 0
+    var executionDuration = 0
 
     val running: Boolean
         get() = memory[instructionPointer] != 99L
@@ -124,6 +125,7 @@ class IntCode(
     }
 
     private fun runInstruction(instruction: Long): Long {
+        executionDuration += 1
         val initialInstructionPointer = instructionPointer
         val paddedInstruction = instruction.toString().padStart(5, '0')
 
