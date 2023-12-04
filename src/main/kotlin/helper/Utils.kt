@@ -20,6 +20,7 @@ data class Point(val x: Int, val y: Int) {
         return kotlin.math.abs(x) + kotlin.math.abs(y)
     }
 
+    operator fun times(value: Int) = Point(x * value, y * value)
     operator fun minus(other: Point): Point =
         Point(x - other.x, y - other.y)
 
