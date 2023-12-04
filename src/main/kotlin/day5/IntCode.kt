@@ -179,4 +179,13 @@ class IntCode(
             memory[index] = value
         }
     }
+
+    fun sendAscii(commands: Collection<String>) {
+        commands.forEach { sendAscii(it) }
+    }
+
+    fun sendAscii(command: String) {
+        command.forEach { char -> inputs.add(char.toLong()) }
+        inputs.add(10L)
+    }
 }
